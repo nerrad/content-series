@@ -1,0 +1,11 @@
+.wp-block-content-series-navigation {
+	// Editor-specific styles
+	.components-placeholder {
+		min-height: 80px;
+	}
+
+	// Prevent clicks in editor
+	a {
+		pointer-events: none;
+	}
+}

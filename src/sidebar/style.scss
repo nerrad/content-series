@@ -1,0 +1,36 @@
+.content-series-panel {
+	.components-panel__row {
+		margin-bottom: 1rem;
+	}
+
+	hr {
+		margin: 1rem 0;
+		border: 0;
+		border-top: 1px solid #ddd;
+	}
+
+	&__order-heading {
+		margin: 0 0 0.5rem;
+		font-size: 11px;
+		text-transform: uppercase;
+		color: #757575;
+	}
+
+	&__creating {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-top: 0.5rem;
+		font-size: 12px;
+		color: #757575;
+	}
+
+	.components-form-token-field__suggestions-list {
+		max-height: 200px;
+		overflow-y: auto;
+	}
+
+	.components-text-control__input[type="number"] {
+		width: 80px;
+	}
+}

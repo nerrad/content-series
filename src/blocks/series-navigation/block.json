@@ -1,0 +1,65 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "content-series/navigation",
+  "version": "1.0.0",
+  "title": "Series Navigation",
+  "category": "theme",
+  "description": "Displays previous/next navigation links within a series.",
+  "textdomain": "content-series",
+  "attributes": {
+    "showTitle": {
+      "type": "boolean",
+      "default": true
+    },
+    "showSeriesName": {
+      "type": "boolean",
+      "default": false
+    },
+    "showPartNumbers": {
+      "type": "boolean",
+      "default": true
+    },
+    "prevLabel": {
+      "type": "string",
+      "default": "Previous"
+    },
+    "nextLabel": {
+      "type": "string",
+      "default": "Next"
+    },
+    "arrowStyle": {
+      "type": "string",
+      "default": "arrow",
+      "enum": ["arrow", "chevron", "none"]
+    }
+  },
+  "usesContext": ["postId", "postType"],
+  "supports": {
+    "html": false,
+    "color": {
+      "link": true,
+      "text": true,
+      "background": true
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true
+    },
+    "spacing": {
+      "margin": true,
+      "padding": true
+    },
+    "layout": {
+      "default": {
+        "type": "flex",
+        "justifyContent": "space-between"
+      },
+      "allowSwitching": false,
+      "allowInheriting": false
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css"
+}

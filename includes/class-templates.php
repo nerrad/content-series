@@ -17,13 +17,18 @@ class Templates {
 	 */
 	public function init() {
 		add_action( 'init', array( $this, 'register_templates' ), 20 );
-		add_filter( 'template_include', array( $this, 'maybe_include_template' ), 99 );
 		add_filter( 'get_the_archive_title', array( $this, 'series_archive_title' ) );
 		add_action( 'pre_get_posts', array( $this, 'series_catalog_query' ) );
 
 		// Register rewrite rule for series catalog.
 		add_action( 'init', array( $this, 'add_rewrite_rules' ) );
 		add_filter( 'query_vars', array( $this, 'add_query_vars' ) );
+
+		// Resolve block templates for custom routes.
+		// For custom query var routes, WordPress doesn't automatically resolve block templates,
+		// so we need to manually provide the template.
+		add_filter( 'template_include', array( $this, 'inject_block_template_for_custom_route' ), 99 );
+		
 	}
 
 	/**
@@ -59,6 +64,12 @@ class Templates {
 			// This is the series catalog page, we'll handle display in template.
 			$query->set( 'post_type', 'post' );
 			$query->set( 'posts_per_page', 0 );
+			
+			// Set query flags to make WordPress recognize this as an archive.
+			// This helps with block template resolution.
+			$query->is_archive           = true;
+			$query->is_post_type_archive = false;
+			$query->is_home              = false;
 		}
 	}
 
@@ -71,10 +82,12 @@ class Templates {
 			return;
 		}
 
+		/** @var \WP_Block_Templates_Registry $registry */
 		$registry = \WP_Block_Templates_Registry::get_instance();
 
 		// Individual series archive template.
 		if ( ! $registry->is_registered( 'content-series//taxonomy-series' ) ) {
+			/** @phpstan-ignore-next-line */
 			$registry->register(
 				'content-series//taxonomy-series',
 				array(
@@ -87,6 +100,7 @@ class Templates {
 
 		// Series catalog template.
 		if ( ! $registry->is_registered( 'content-series//archive-series-catalog' ) ) {
+			/** @phpstan-ignore-next-line */
 			$registry->register(
 				'content-series//archive-series-catalog',
 				array(
@@ -99,32 +113,40 @@ class Templates {
 	}
 
 	/**
-	 * Maybe include plugin templates for non-block themes.
+	 * Inject block template for custom routes in block themes.
 	 *
-	 * @param string $template Current template path.
-	 * @return string Template path to use.
+	 * For block themes, we need to manually provide our template since
+	 * WordPress doesn't automatically resolve templates for custom query vars.
+	 *
+	 * @param string $template The template path WordPress is trying to load.
+	 * @return string The template path (we modify globals for block themes).
 	 */
-	public function maybe_include_template( $template ) {
-		// Series catalog page.
-		if ( get_query_var( 'content_series_catalog' ) ) {
-			$plugin_template = CONTENT_SERIES_PATH . 'templates/series-catalog.php';
-			if ( file_exists( $plugin_template ) ) {
-				return $plugin_template;
-			}
+	public function inject_block_template_for_custom_route( $template ) {
+		// Only process on frontend requests.
+		if ( is_admin() ) {
+			return $template;
 		}
 
-		// Individual series archive.
-		if ( is_tax( CONTENT_SERIES_TAXONOMY ) ) {
-			// Check theme first.
-			$theme_template = locate_template( array( 'taxonomy-series.php' ) );
-			if ( $theme_template ) {
-				return $theme_template;
-			}
+		// Only handle block themes.
+		if ( ! wp_is_block_theme() ) {
+			return $template;
+		}
 
-			// Use plugin template.
-			$plugin_template = CONTENT_SERIES_PATH . 'templates/taxonomy-series.php';
-			if ( file_exists( $plugin_template ) ) {
-				return $plugin_template;
+		// Check if this is the series catalog route.
+		if ( get_query_var( 'content_series_catalog' ) && function_exists( 'get_block_template' ) ) {
+			// Get the template using WordPress's get_block_template() function.
+			// This works with templates registered via the registry.
+			$catalog_template = get_block_template( 'content-series//archive-series-catalog', 'wp_template' );
+			if ( $catalog_template ) {
+				// Set the global template variable that WordPress uses.
+				global $_wp_current_template;
+				$_wp_current_template = $catalog_template;
+				
+				// Also set the template content global.
+				global $_wp_current_template_content;
+				if ( isset( $catalog_template->content ) ) {
+					$_wp_current_template_content = $catalog_template->content;
+				}
 			}
 		}
 

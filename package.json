@@ -16,9 +16,16 @@
     "lint:php:fix": "vendor/bin/phpcbf",
     "format": "wp-scripts format",
     "packages-update": "wp-scripts packages-update",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "env:start": "wp-env start",
+    "env:stop": "wp-env stop",
+    "env:clean": "wp-env clean",
+    "env:destroy": "wp-env destroy",
+    "test": "wp-env run tests-cli --env-cwd=wp-content/plugins/new-series-plugin vendor/bin/phpunit",
+    "test:watch": "wp-env run tests-cli --env-cwd=wp-content/plugins/new-series-plugin vendor/bin/phpunit --watch"
   },
   "devDependencies": {
+    "@wordpress/env": "^10.36.0",
     "@wordpress/scripts": "^28.0.0",
     "typescript": "^5.3.0"
   },

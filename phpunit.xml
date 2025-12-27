@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.5/phpunit.xsd"
+	bootstrap="tests/bootstrap.php"
+	backupGlobals="false"
+	colors="true"
+	convertErrorsToExceptions="true"
+	convertNoticesToExceptions="true"
+	convertWarningsToExceptions="true"
+	processIsolation="false"
+	stopOnFailure="false"
+	verbose="true"
+>
+	<testsuites>
+		<testsuite name="default">
+			<directory suffix="Test.php">./tests</directory>
+		</testsuite>
+	</testsuites>
+	<coverage>
+		<include>
+			<directory suffix=".php">./includes</directory>
+			<file>./content-series.php</file>
+		</include>
+		<exclude>
+			<directory>./vendor</directory>
+			<directory>./node_modules</directory>
+			<directory>./tests</directory>
+			<directory>./build</directory>
+		</exclude>
+	</coverage>
+	<php>
+		<!-- PHPUnit Polyfills for PHPUnit 9.x compatibility -->
+		<const name="WP_TESTS_PHPUNIT_POLYFILLS_PATH" value="vendor/yoast/phpunit-polyfills/"/>
+		<!-- 
+			wp-env automatically sets WP_TESTS_DIR environment variable pointing to 
+			WordPress test files. The bootstrap.php file uses this environment variable.
+			No additional configuration needed here for wp-env integration.
+		-->
+	</php>
+</phpunit>
+

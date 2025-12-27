@@ -1,2 +1,12 @@
 node_modules/
 vendor/
+
+# PHPUnit
+/tmp/
+wordpress/
+wordpress-tests-lib/
+.phpunit.result.cache
+
+# wp-env
+.wp-env/
+.wp-env.json.override

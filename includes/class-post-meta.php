@@ -5,7 +5,7 @@
  * @package ContentSeries
  */
 
-namespace ContentSeries;
+namespace Content_Series;
 
 /**
  * Handles post meta registration for series ordering and short titles.
@@ -18,7 +18,7 @@ class Post_Meta {
 	public function init() {
 		add_action( 'init', array( $this, 'register_meta' ) );
 		add_action( 'rest_api_init', array( $this, 'register_rest_fields' ) );
-		
+
 		// Ensure meta is set when post is assigned to series (fallback for REST API edge cases).
 		add_action( 'set_object_terms', array( $this, 'maybe_set_default_series_order' ), 10, 6 );
 	}
@@ -39,7 +39,7 @@ class Post_Meta {
 				'single'            => true,
 				'show_in_rest'      => true,
 				'sanitize_callback' => 'sanitize_text_field',
-				'auth_callback'     => function() {
+				'auth_callback'     => function () {
 					return current_user_can( 'edit_posts' );
 				},
 			)
@@ -62,7 +62,7 @@ class Post_Meta {
 					),
 				),
 				'sanitize_callback' => array( $this, 'sanitize_series_order' ),
-				'auth_callback'     => function() {
+				'auth_callback'     => function () {
 					return current_user_can( 'edit_posts' );
 				},
 			)
@@ -99,9 +99,9 @@ class Post_Meta {
 				'get_callback'    => array( $this, 'get_series_order' ),
 				'update_callback' => array( $this, 'update_series_order' ),
 				'schema'          => array(
-					'type'        => 'object',
-					'description' => __( 'Series order data keyed by series ID.', 'content-series' ),
-					'context'     => array( 'view', 'edit' ),
+					'type'                 => 'object',
+					'description'          => __( 'Series order data keyed by series ID.', 'content-series' ),
+					'context'              => array( 'view', 'edit' ),
 					'additionalProperties' => array(
 						'type' => 'integer',
 					),
@@ -126,8 +126,8 @@ class Post_Meta {
 		}
 
 		foreach ( $series as $term ) {
-			$meta_key          = CONTENT_SERIES_PART_KEY . '_' . $term->term_id;
-			$part              = get_post_meta( $post_id, $meta_key, true );
+			$meta_key                = CONTENT_SERIES_PART_KEY . '_' . $term->term_id;
+			$part                    = get_post_meta( $post_id, $meta_key, true );
 			$order[ $term->term_id ] = $part ? absint( $part ) : 1;
 		}
 
@@ -216,7 +216,7 @@ class Post_Meta {
 		foreach ( $current_series as $term ) {
 			$meta_key = CONTENT_SERIES_PART_KEY . '_' . $term->term_id;
 			$existing = get_post_meta( $object_id, $meta_key, true );
-			
+
 			// Only set default if meta doesn't exist.
 			if ( empty( $existing ) ) {
 				update_post_meta( $object_id, $meta_key, 1 );

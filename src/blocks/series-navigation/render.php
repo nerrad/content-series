@@ -9,102 +9,112 @@
  * @var WP_Block $block      Block instance.
  */
 
-use ContentSeries\Post_Meta;
-use ContentSeries\Term_Meta;
-use ContentSeries\Rest_API;
+use Content_Series\Post_Meta;
+use Content_Series\Term_Meta;
+use Content_Series\Rest_API;
 
 // Get the current post ID from context.
-$post_id = $block->context['postId'] ?? get_the_ID();
+$content_series_post_id = $block->context['postId'] ?? get_the_ID();
 
-if ( ! $post_id ) {
+if ( ! $content_series_post_id ) {
 	return '';
 }
 
 // Get the post's series.
-$series_terms = get_the_terms( $post_id, CONTENT_SERIES_TAXONOMY );
+$content_series_terms = get_the_terms( $content_series_post_id, CONTENT_SERIES_TAXONOMY );
 
-if ( ! $series_terms || is_wp_error( $series_terms ) ) {
+if ( ! $content_series_terms || is_wp_error( $content_series_terms ) ) {
 	// Not in a series, render nothing.
 	return '';
 }
 
 // Use the first series (primary).
-$series = $series_terms[0];
+$content_series_series = $content_series_terms[0];
 
 // Get posts in the series.
-$series_posts = Rest_API::query_series_posts( $series->term_id );
-var_dump( $series_posts );
+$content_series_posts = Rest_API::query_series_posts( $content_series_series->term_id );
 
 // Find current post index.
-$current_index = -1;
+$content_series_current_index = -1;
 
-foreach ( $series_posts as $index => $post ) {
-	var_dump( $post->ID );
-	if ( $post->ID === $post_id ) {
-		$current_index = $index;
+foreach ( $content_series_posts as $content_series_index => $content_series_post ) {
+	if ( $content_series_post->ID === $content_series_post_id ) {
+		$content_series_current_index = $content_series_index;
 		break;
 	}
 }
 
-if ( $current_index === -1 ) {
+if ( -1 === $content_series_current_index ) {
 	return '';
 }
 
 // Get prev/next posts.
-$prev_post = $current_index > 0 ? $series_posts[ $current_index - 1 ] : null;
-$next_post = $current_index < count( $series_posts ) - 1 ? $series_posts[ $current_index + 1 ] : null;
+$content_series_prev_post = $content_series_current_index > 0 ? $content_series_posts[ $content_series_current_index - 1 ] : null;
+$content_series_next_post = $content_series_current_index < count( $content_series_posts ) - 1 ? $content_series_posts[ $content_series_current_index + 1 ] : null;
 
 // If no navigation needed, return empty.
-if ( ! $prev_post && ! $next_post ) {
+if ( ! $content_series_prev_post && ! $content_series_next_post ) {
 	return '';
 }
 
 // Block attributes.
-$show_title        = $attributes['showTitle'] ?? true;
-$show_series_name  = $attributes['showSeriesName'] ?? false;
-$show_part_numbers = $attributes['showPartNumbers'] ?? true;
-$prev_label        = $attributes['prevLabel'] ?? __( 'Previous', 'content-series' );
-$next_label        = $attributes['nextLabel'] ?? __( 'Next', 'content-series' );
-$arrow_style       = $attributes['arrowStyle'] ?? 'arrow';
+$content_series_show_title        = $attributes['showTitle'] ?? true;
+$content_series_show_series_name  = $attributes['showSeriesName'] ?? false;
+$content_series_show_part_numbers = $attributes['showPartNumbers'] ?? true;
+$content_series_prev_label        = $attributes['prevLabel'] ?? __( 'Previous', 'content-series' );
+$content_series_next_label        = $attributes['nextLabel'] ?? __( 'Next', 'content-series' );
+$content_series_arrow_style       = $attributes['arrowStyle'] ?? 'arrow';
 
 // Arrow characters.
-$arrows = array(
-	'arrow'   => array( 'prev' => '←', 'next' => '→' ),
-	'chevron' => array( 'prev' => '‹', 'next' => '›' ),
-	'none'    => array( 'prev' => '', 'next' => '' ),
+$content_series_arrows = array(
+	'arrow'   => array(
+		'prev' => '←',
+		'next' => '→',
+	),
+	'chevron' => array(
+		'prev' => '‹',
+		'next' => '›',
+	),
+	'none'    => array(
+		'prev' => '',
+		'next' => '',
+	),
 );
-$arrow = $arrows[ $arrow_style ] ?? $arrows['arrow'];
+$content_series_arrow  = $content_series_arrows[ $content_series_arrow_style ] ?? $content_series_arrows['arrow'];
 
 // Build wrapper attributes.
-$wrapper_attributes = get_block_wrapper_attributes( array(
-	'class' => 'wp-block-content-series-navigation',
-) );
+$content_series_wrapper_attributes = get_block_wrapper_attributes(
+	array(
+		'class' => 'wp-block-content-series-navigation',
+	)
+);
 
 ?>
-<nav <?php echo $wrapper_attributes; ?>>
+<nav <?php echo wp_kses_post( $content_series_wrapper_attributes ); ?>>
 	<div class="wp-block-content-series-navigation__prev">
-		<?php if ( $prev_post ) :
-			$prev_part = Post_Meta::get_post_series_part( $prev_post->ID, $series->term_id );
-		?>
-			<a href="<?php echo esc_url( get_permalink( $prev_post->ID ) ); ?>">
-				<?php if ( $arrow['prev'] ) : ?>
+		<?php
+		if ( $content_series_prev_post ) :
+			$content_series_prev_part = Post_Meta::get_post_series_part( $content_series_prev_post->ID, $content_series_series->term_id );
+			?>
+			<a href="<?php echo esc_url( get_permalink( $content_series_prev_post->ID ) ); ?>">
+				<?php if ( $content_series_arrow['prev'] ) : ?>
 					<span class="wp-block-content-series-navigation__arrow">
-						<?php echo esc_html( $arrow['prev'] ); ?>
+						<?php echo esc_html( $content_series_arrow['prev'] ); ?>
 					</span>
 				<?php endif; ?>
 				<span class="wp-block-content-series-navigation__text">
 					<span class="wp-block-content-series-navigation__label">
 						<?php
-						echo esc_html( $prev_label );
-						if ( $show_part_numbers ) {
+						echo esc_html( $content_series_prev_label );
+						if ( $content_series_show_part_numbers ) {
 							/* translators: %d: part number */
-							echo esc_html( sprintf( ' (Part %d)', $prev_part ) );
+							echo esc_html( sprintf( ' (Part %d)', $content_series_prev_part ) );
 						}
 						?>
 					</span>
-					<?php if ( $show_title ) : ?>
+					<?php if ( $content_series_show_title ) : ?>
 						<span class="wp-block-content-series-navigation__title">
-							<?php echo esc_html( get_the_title( $prev_post->ID ) ); ?>
+							<?php echo esc_html( get_the_title( $content_series_prev_post->ID ) ); ?>
 						</span>
 					<?php endif; ?>
 				</span>
@@ -114,38 +124,39 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
 		<?php endif; ?>
 	</div>
 
-	<?php if ( $show_series_name ) : ?>
+	<?php if ( $content_series_show_series_name ) : ?>
 		<div class="wp-block-content-series-navigation__series">
-			<a href="<?php echo esc_url( get_term_link( $series ) ); ?>">
-				<?php echo esc_html( $series->name ); ?>
+			<a href="<?php echo esc_url( get_term_link( $content_series_series ) ); ?>">
+				<?php echo esc_html( $content_series_series->name ); ?>
 			</a>
 		</div>
 	<?php endif; ?>
 
 	<div class="wp-block-content-series-navigation__next">
-		<?php if ( $next_post ) :
-			$next_part = Post_Meta::get_post_series_part( $next_post->ID, $series->term_id );
-		?>
-			<a href="<?php echo esc_url( get_permalink( $next_post->ID ) ); ?>">
+		<?php
+		if ( $content_series_next_post ) :
+			$content_series_next_part = Post_Meta::get_post_series_part( $content_series_next_post->ID, $content_series_series->term_id );
+			?>
+			<a href="<?php echo esc_url( get_permalink( $content_series_next_post->ID ) ); ?>">
 				<span class="wp-block-content-series-navigation__text">
 					<span class="wp-block-content-series-navigation__label">
 						<?php
-						echo esc_html( $next_label );
-						if ( $show_part_numbers ) {
+						echo esc_html( $content_series_next_label );
+						if ( $content_series_show_part_numbers ) {
 							/* translators: %d: part number */
-							echo esc_html( sprintf( ' (Part %d)', $next_part ) );
+							echo esc_html( sprintf( ' (Part %d)', $content_series_next_part ) );
 						}
 						?>
 					</span>
-					<?php if ( $show_title ) : ?>
+					<?php if ( $content_series_show_title ) : ?>
 						<span class="wp-block-content-series-navigation__title">
-							<?php echo esc_html( get_the_title( $next_post->ID ) ); ?>
+							<?php echo esc_html( get_the_title( $content_series_next_post->ID ) ); ?>
 						</span>
 					<?php endif; ?>
 				</span>
-				<?php if ( $arrow['next'] ) : ?>
+				<?php if ( $content_series_arrow['next'] ) : ?>
 					<span class="wp-block-content-series-navigation__arrow">
-						<?php echo esc_html( $arrow['next'] ); ?>
+						<?php echo esc_html( $content_series_arrow['next'] ); ?>
 					</span>
 				<?php endif; ?>
 			</a>

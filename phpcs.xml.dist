@@ -32,7 +32,9 @@
 	<!-- Set the text domain -->
 	<rule ref="WordPress.WP.I18n">
 		<properties>
-			<property name="text_domain" type="array" value="content-series"/>
+			<property name="text_domain" type="array">
+				<element value="content-series"/>
+			</property>
 		</properties>
 	</rule>
 
@@ -40,7 +42,9 @@
 		 Replace 'content-series' with your actual prefix. -->
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>
-			<property name="prefixes" type="array" value="Content_Series"/>
+			<property name="prefixes" type="array">
+				<element value="Content_Series"/>
+			</property>
 		</properties>
 	</rule>
 

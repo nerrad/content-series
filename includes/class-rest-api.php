@@ -5,7 +5,7 @@
  * @package ContentSeries
  */
 
-namespace ContentSeries;
+namespace Content_Series;
 
 /**
  * Handles custom REST API endpoints for series management.
@@ -40,7 +40,7 @@ class Rest_API {
 				'args'                => array(
 					'id' => array(
 						'required'          => true,
-						'validate_callback' => function( $param ) {
+						'validate_callback' => function ( $param ) {
 							return is_numeric( $param );
 						},
 					),
@@ -55,19 +55,19 @@ class Rest_API {
 			array(
 				'methods'             => \WP_REST_Server::EDITABLE,
 				'callback'            => array( $this, 'reorder_series_posts' ),
-				'permission_callback' => function() {
+				'permission_callback' => function () {
 					return current_user_can( 'edit_posts' );
 				},
 				'args'                => array(
 					'id'    => array(
 						'required'          => true,
-						'validate_callback' => function( $param ) {
+						'validate_callback' => function ( $param ) {
 							return is_numeric( $param );
 						},
 					),
 					'order' => array(
 						'required'          => true,
-						'validate_callback' => function( $param ) {
+						'validate_callback' => function ( $param ) {
 							return is_array( $param );
 						},
 					),
@@ -86,13 +86,13 @@ class Rest_API {
 				'args'                => array(
 					'per_page' => array(
 						'default'           => 100,
-						'validate_callback' => function( $param ) {
+						'validate_callback' => function ( $param ) {
 							return is_numeric( $param ) && $param > 0 && $param <= 100;
 						},
 					),
 					'page'     => array(
 						'default'           => 1,
-						'validate_callback' => function( $param ) {
+						'validate_callback' => function ( $param ) {
 							return is_numeric( $param ) && $param > 0;
 						},
 					),
@@ -127,27 +127,29 @@ class Rest_API {
 		$response_data = array();
 		foreach ( $posts as $post ) {
 			$response_data[] = array(
-				'id'           => $post->ID,
-				'title'        => get_the_title( $post->ID ),
-				'short_title'  => get_post_meta( $post->ID, CONTENT_SERIES_SHORT_TITLE_KEY, true ),
-				'url'          => get_permalink( $post->ID ),
-				'series_part'  => Post_Meta::get_post_series_part( $post->ID, $series_id ),
-				'status'       => $post->post_status,
-				'date'         => $post->post_date,
+				'id'          => $post->ID,
+				'title'       => get_the_title( $post->ID ),
+				'short_title' => get_post_meta( $post->ID, CONTENT_SERIES_SHORT_TITLE_KEY, true ),
+				'url'         => get_permalink( $post->ID ),
+				'series_part' => Post_Meta::get_post_series_part( $post->ID, $series_id ),
+				'status'      => $post->post_status,
+				'date'        => $post->post_date,
 			);
 		}
 
-		return rest_ensure_response( array(
-			'series' => array(
-				'id'          => $series->term_id,
-				'name'        => $series->name,
-				'slug'        => $series->slug,
-				'description' => $series->description,
-				'icon'        => Term_Meta::get_series_icon( $series->term_id ),
-				'count'       => $series->count,
-			),
-			'posts'  => $response_data,
-		) );
+		return rest_ensure_response(
+			array(
+				'series' => array(
+					'id'          => $series->term_id,
+					'name'        => $series->name,
+					'slug'        => $series->slug,
+					'description' => $series->description,
+					'icon'        => Term_Meta::get_series_icon( $series->term_id ),
+					'count'       => $series->count,
+				),
+				'posts'  => $response_data,
+			)
+		);
 	}
 
 	/**
@@ -176,10 +178,12 @@ class Rest_API {
 			Post_Meta::set_post_series_part( absint( $post_id ), $series_id, absint( $position ) );
 		}
 
-		return rest_ensure_response( array(
-			'success' => true,
-			'message' => __( 'Series order updated.', 'content-series' ),
-		) );
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'message' => __( 'Series order updated.', 'content-series' ),
+			)
+		);
 	}
 
 	/**
@@ -193,19 +197,23 @@ class Rest_API {
 		$page     = absint( $request['page'] );
 		$offset   = ( $page - 1 ) * $per_page;
 
-		$terms = get_terms( array(
-			'taxonomy'   => CONTENT_SERIES_TAXONOMY,
-			'hide_empty' => false,
-			'number'     => $per_page,
-			'offset'     => $offset,
-			'orderby'    => 'name',
-			'order'      => 'ASC',
-		) );
+		$terms = get_terms(
+			array(
+				'taxonomy'   => CONTENT_SERIES_TAXONOMY,
+				'hide_empty' => false,
+				'number'     => $per_page,
+				'offset'     => $offset,
+				'orderby'    => 'name',
+				'order'      => 'ASC',
+			)
+		);
 
-		$total = wp_count_terms( array(
-			'taxonomy'   => CONTENT_SERIES_TAXONOMY,
-			'hide_empty' => false,
-		) );
+		$total = wp_count_terms(
+			array(
+				'taxonomy'   => CONTENT_SERIES_TAXONOMY,
+				'hide_empty' => false,
+			)
+		);
 
 		if ( is_wp_error( $terms ) ) {
 			$terms = array();

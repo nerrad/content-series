@@ -5,7 +5,7 @@
  * @package ContentSeries
  */
 
-namespace ContentSeries;
+namespace Content_Series;
 
 /**
  * Handles series taxonomy registration.

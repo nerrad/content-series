@@ -5,7 +5,7 @@
  * @package ContentSeries
  */
 
-namespace ContentSeries;
+namespace Content_Series;
 
 /**
  * Handles migration of data from the legacy PublishPress Series plugin.
@@ -47,11 +47,14 @@ class Migration {
 		$legacy_options = get_option( self::LEGACY_OPTIONS_KEY );
 		if ( ! $legacy_options ) {
 			// No legacy data, mark as migrated.
-			update_option( self::MIGRATION_OPTION, array(
-				'version'   => CONTENT_SERIES_VERSION,
-				'timestamp' => time(),
-				'source'    => 'fresh_install',
-			) );
+			update_option(
+				self::MIGRATION_OPTION,
+				array(
+					'version'   => CONTENT_SERIES_VERSION,
+					'timestamp' => time(),
+					'source'    => 'fresh_install',
+				)
+			);
 			return false;
 		}
 
@@ -59,12 +62,15 @@ class Migration {
 		$this->migrate_icons();
 
 		// Mark as migrated.
-		update_option( self::MIGRATION_OPTION, array(
-			'version'      => CONTENT_SERIES_VERSION,
-			'timestamp'    => time(),
-			'source'       => 'publishpress_series',
-			'icons_count'  => $this->get_migrated_icons_count(),
-		) );
+		update_option(
+			self::MIGRATION_OPTION,
+			array(
+				'version'     => CONTENT_SERIES_VERSION,
+				'timestamp'   => time(),
+				'source'      => 'publishpress_series',
+				'icons_count' => $this->get_migrated_icons_count(),
+			)
+		);
 
 		return true;
 	}
@@ -90,8 +96,10 @@ class Migration {
 		}
 
 		// Get all icons from legacy table.
+		// Table name is constructed from safe values (wpdb prefix + constant).
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$icons = $wpdb->get_results(
-			"SELECT term_id, icon FROM {$table_name}"
+			"SELECT term_id, icon FROM {$wpdb->_escape( $table_name )}"
 		);
 
 		if ( ! $icons ) {
@@ -186,7 +194,7 @@ class Migration {
 				printf(
 					/* translators: %d: number of series icons migrated */
 					esc_html__( 'Successfully migrated from PublishPress Series. %d series icon(s) were imported. Your existing series and post assignments have been preserved.', 'content-series' ),
-					$icons_count
+					esc_html( $icons_count )
 				);
 				?>
 			</p>

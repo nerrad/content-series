@@ -5,7 +5,7 @@
  * @package ContentSeries
  */
 
-namespace ContentSeries;
+namespace Content_Series;
 
 /**
  * Handles admin menu, settings page, and admin-specific functionality.
@@ -80,15 +80,18 @@ class Admin {
 
 		if ( ! file_exists( $asset_file ) ) {
 			// Show fallback message if assets not built.
-			add_action( 'admin_notices', function() {
-				?>
+			add_action(
+				'admin_notices',
+				function () {
+					?>
 				<div class="notice notice-error">
 					<p>
 						<?php esc_html_e( 'Content Series assets have not been built. Please run `npm install && npm run build` in the plugin directory.', 'content-series' ); ?>
 					</p>
 				</div>
-				<?php
-			} );
+					<?php
+				}
+			);
 			return;
 		}
 
@@ -141,12 +144,14 @@ class Admin {
 			'content_series_catalog'
 		);
 
-		$terms = get_terms( array(
-			'taxonomy'   => CONTENT_SERIES_TAXONOMY,
-			'hide_empty' => false,
-			'orderby'    => 'name',
-			'order'      => 'ASC',
-		) );
+		$terms = get_terms(
+			array(
+				'taxonomy'   => CONTENT_SERIES_TAXONOMY,
+				'hide_empty' => false,
+				'orderby'    => 'name',
+				'order'      => 'ASC',
+			)
+		);
 
 		if ( empty( $terms ) || is_wp_error( $terms ) ) {
 			return '<p>' . esc_html__( 'No series found.', 'content-series' ) . '</p>';

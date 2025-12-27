@@ -40,12 +40,12 @@ define( 'CONTENT_SERIES_TAXONOMY', 'series' );
 spl_autoload_register(
 	function ( $class_name ) {
 		// Only autoload our classes.
-		if ( strpos( $class_name, 'ContentSeries\\' ) !== 0 ) {
+		if ( strpos( $class_name, 'Content_Series\\' ) !== 0 ) {
 			return;
 		}
 
 		// Convert namespace to file path.
-		$class_file = str_replace( 'ContentSeries\\', '', $class_name );
+		$class_file = str_replace( 'Content_Series\\', '', $class_name );
 		$class_file = str_replace( '_', '-', $class_file );
 		$class_file = strtolower( $class_file );
 		$class_file = 'class-' . $class_file . '.php';
@@ -63,7 +63,7 @@ spl_autoload_register(
  */
 function content_series_init() {
 	// Load plugin classes.
-	$plugin = new ContentSeries\Content_Series();
+	$plugin = new Content_Series\Content_Series();
 	$plugin->init();
 }
 add_action( 'plugins_loaded', 'content_series_init' );
@@ -74,7 +74,7 @@ add_action( 'plugins_loaded', 'content_series_init' );
 function content_series_activate() {
 	// Run migration if coming from legacy plugin.
 	require_once CONTENT_SERIES_PATH . 'includes/class-migration.php';
-	$migration = new ContentSeries\Migration();
+	$migration = new Content_Series\Migration();
 	$migration->maybe_migrate();
 
 	// Flush rewrite rules for taxonomy.

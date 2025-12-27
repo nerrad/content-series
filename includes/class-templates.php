@@ -5,7 +5,7 @@
  * @package ContentSeries
  */
 
-namespace ContentSeries;
+namespace Content_Series;
 
 /**
  * Handles block template registration for series archive pages.
@@ -28,7 +28,6 @@ class Templates {
 		// For custom query var routes, WordPress doesn't automatically resolve block templates,
 		// so we need to manually provide the template.
 		add_filter( 'template_include', array( $this, 'inject_block_template_for_custom_route' ), 99 );
-		
 	}
 
 	/**
@@ -64,7 +63,7 @@ class Templates {
 			// This is the series catalog page, we'll handle display in template.
 			$query->set( 'post_type', 'post' );
 			$query->set( 'posts_per_page', 0 );
-			
+
 			// Set query flags to make WordPress recognize this as an archive.
 			// This helps with block template resolution.
 			$query->is_archive           = true;
@@ -82,12 +81,20 @@ class Templates {
 			return;
 		}
 
-		/** @var \WP_Block_Templates_Registry $registry */
+		/**
+		 * Block templates registry instance.
+		 *
+		 * @var \WP_Block_Templates_Registry $registry
+		 */
 		$registry = \WP_Block_Templates_Registry::get_instance();
 
 		// Individual series archive template.
 		if ( ! $registry->is_registered( 'content-series//taxonomy-series' ) ) {
-			/** @phpstan-ignore-next-line */
+			/**
+			 * Register series archive template.
+			 *
+			 * @phpstan-ignore-next-line
+			 */
 			$registry->register(
 				'content-series//taxonomy-series',
 				array(
@@ -100,7 +107,11 @@ class Templates {
 
 		// Series catalog template.
 		if ( ! $registry->is_registered( 'content-series//archive-series-catalog' ) ) {
-			/** @phpstan-ignore-next-line */
+			/**
+			 * Register series catalog template.
+			 *
+			 * @phpstan-ignore-next-line
+			 */
 			$registry->register(
 				'content-series//archive-series-catalog',
 				array(
@@ -139,11 +150,12 @@ class Templates {
 			$catalog_template = get_block_template( 'content-series//archive-series-catalog', 'wp_template' );
 			if ( $catalog_template ) {
 				// Set the global template variable that WordPress uses.
-				global $_wp_current_template;
+				// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
+				global $_wp_current_template, $_wp_current_template_content;
+				// phpcs:enable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 				$_wp_current_template = $catalog_template;
-				
+
 				// Also set the template content global.
-				global $_wp_current_template_content;
 				if ( isset( $catalog_template->content ) ) {
 					$_wp_current_template_content = $catalog_template->content;
 				}

@@ -5,7 +5,7 @@
  * @package ContentSeries
  */
 
-namespace ContentSeries;
+namespace Content_Series;
 
 /**
  * Main Content Series plugin class.
@@ -158,8 +158,8 @@ class Content_Series {
 			'content-series-sidebar',
 			'contentSeriesData',
 			array(
-				'taxonomy'     => CONTENT_SERIES_TAXONOMY,
-				'partKey'      => CONTENT_SERIES_PART_KEY,
+				'taxonomy'      => CONTENT_SERIES_TAXONOMY,
+				'partKey'       => CONTENT_SERIES_PART_KEY,
 				'shortTitleKey' => CONTENT_SERIES_SHORT_TITLE_KEY,
 			)
 		);

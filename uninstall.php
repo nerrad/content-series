@@ -24,10 +24,10 @@ delete_option( 'content_series_migrated' );
 delete_option( 'content_series_migration_notice_dismissed' );
 
 // Optionally delete all series data (commented out by default for safety).
-// Uncomment the following code if you want a complete cleanup:
+// Uncomment the following code if you want a complete cleanup.
 
-/*
-global $wpdb;
+/**
+ * Global $wpdb;
 
 // Delete all series term meta.
 $wpdb->query(

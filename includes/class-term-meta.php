@@ -5,7 +5,7 @@
  * @package ContentSeries
  */
 
-namespace ContentSeries;
+namespace Content_Series;
 
 /**
  * Handles term meta registration for series icons and additional data.
@@ -55,7 +55,7 @@ class Term_Meta {
 				'single'            => true,
 				'show_in_rest'      => true,
 				'sanitize_callback' => 'esc_url_raw',
-				'auth_callback'     => function() {
+				'auth_callback'     => function () {
 					return current_user_can( 'manage_categories' );
 				},
 			)
@@ -70,7 +70,7 @@ class Term_Meta {
 				'single'            => true,
 				'show_in_rest'      => true,
 				'sanitize_callback' => 'absint',
-				'auth_callback'     => function() {
+				'auth_callback'     => function () {
 					return current_user_can( 'manage_categories' );
 				},
 			)
@@ -133,6 +133,17 @@ class Term_Meta {
 	 * @param int $term_id Term ID.
 	 */
 	public function save_icon( $term_id ) {
+		// Verify nonce for term form submission.
+		if ( isset( $_POST['_wpnonce'] ) ) {
+			$nonce_action = $term_id ? "update-tag_{$term_id}" : 'add-tag';
+			if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), $nonce_action ) ) {
+				return;
+			}
+		} elseif ( ! isset( $_POST['_wpnonce_add-tag'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce_add-tag'] ) ), 'add-tag' ) ) {
+			// For created_series action, check add-tag nonce.
+			return;
+		}
+
 		if ( isset( $_POST['series_icon'] ) ) {
 			$icon_url = sanitize_url( wp_unslash( $_POST['series_icon'] ) );
 			update_term_meta( $term_id, self::ICON_META_KEY, $icon_url );

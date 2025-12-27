@@ -5,16 +5,18 @@
  * @package ContentSeries
  */
 
-use ContentSeries\Term_Meta;
+use Content_Series\Term_Meta;
 
 get_header();
 
-$terms = get_terms( array(
-	'taxonomy'   => CONTENT_SERIES_TAXONOMY,
-	'hide_empty' => false,
-	'orderby'    => 'name',
-	'order'      => 'ASC',
-) );
+$content_series_terms = get_terms(
+	array(
+		'taxonomy'   => CONTENT_SERIES_TAXONOMY,
+		'hide_empty' => false,
+		'orderby'    => 'name',
+		'order'      => 'ASC',
+	)
+);
 ?>
 
 <main id="primary" class="site-main content-series-catalog-page">
@@ -27,17 +29,18 @@ $terms = get_terms( array(
 		</p>
 	</header>
 
-	<?php if ( ! empty( $terms ) && ! is_wp_error( $terms ) ) : ?>
+	<?php if ( ! empty( $content_series_terms ) && ! is_wp_error( $content_series_terms ) ) : ?>
 		<div class="content-series-catalog-page__grid">
-			<?php foreach ( $terms as $term ) :
-				$icon = Term_Meta::get_series_icon( $term->term_id );
-				$link = get_term_link( $term );
-			?>
+			<?php
+			foreach ( $content_series_terms as $content_series_term ) :
+				$content_series_icon = Term_Meta::get_series_icon( $content_series_term->term_id );
+				$content_series_link = get_term_link( $content_series_term );
+				?>
 				<article class="content-series-catalog-page__item">
-					<?php if ( $icon ) : ?>
-						<a href="<?php echo esc_url( $link ); ?>" class="content-series-catalog-page__icon-link">
+					<?php if ( $content_series_icon ) : ?>
+						<a href="<?php echo esc_url( $content_series_link ); ?>" class="content-series-catalog-page__icon-link">
 							<img
-								src="<?php echo esc_url( $icon ); ?>"
+								src="<?php echo esc_url( $content_series_icon ); ?>"
 								alt=""
 								class="content-series-catalog-page__icon"
 							>
@@ -45,8 +48,8 @@ $terms = get_terms( array(
 					<?php endif; ?>
 
 					<h2 class="content-series-catalog-page__item-title">
-						<a href="<?php echo esc_url( $link ); ?>">
-							<?php echo esc_html( $term->name ); ?>
+						<a href="<?php echo esc_url( $content_series_link ); ?>">
+							<?php echo esc_html( $content_series_term->name ); ?>
 						</a>
 					</h2>
 
@@ -54,15 +57,15 @@ $terms = get_terms( array(
 						<?php
 						printf(
 							/* translators: %d: number of posts */
-							esc_html( _n( '%d post', '%d posts', $term->count, 'content-series' ) ),
-							$term->count
+							esc_html( _n( '%d post', '%d posts', $content_series_term->count, 'content-series' ) ),
+							esc_html( $content_series_term->count )
 						);
 						?>
 					</p>
 
-					<?php if ( $term->description ) : ?>
+					<?php if ( $content_series_term->description ) : ?>
 						<p class="content-series-catalog-page__item-description">
-							<?php echo esc_html( wp_trim_words( $term->description, 20 ) ); ?>
+							<?php echo esc_html( wp_trim_words( $content_series_term->description, 20 ) ); ?>
 						</p>
 					<?php endif; ?>
 				</article>

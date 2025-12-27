@@ -5,21 +5,21 @@
  * @package ContentSeries
  */
 
-use ContentSeries\Term_Meta;
-use ContentSeries\Rest_API;
+use Content_Series\Term_Meta;
+use Content_Series\Rest_API;
 
 get_header();
 
-$term = get_queried_object();
-$icon = Term_Meta::get_series_icon( $term->term_id );
-$posts = Rest_API::query_series_posts( $term->term_id );
+$content_series_term  = get_queried_object();
+$content_series_icon  = Term_Meta::get_series_icon( $content_series_term->term_id );
+$content_series_posts = Rest_API::query_series_posts( $content_series_term->term_id );
 ?>
 
 <main id="primary" class="site-main content-series-archive">
 	<header class="content-series-archive__header">
-		<?php if ( $icon ) : ?>
+		<?php if ( $content_series_icon ) : ?>
 			<img
-				src="<?php echo esc_url( $icon ); ?>"
+				src="<?php echo esc_url( $content_series_icon ); ?>"
 				alt=""
 				class="content-series-archive__icon"
 			>
@@ -27,52 +27,55 @@ $posts = Rest_API::query_series_posts( $term->term_id );
 
 		<div class="content-series-archive__info">
 			<h1 class="content-series-archive__title">
-				<?php echo esc_html( $term->name ); ?>
+				<?php echo esc_html( $content_series_term->name ); ?>
 			</h1>
 
-			<?php if ( $term->description ) : ?>
+			<?php if ( $content_series_term->description ) : ?>
 				<div class="content-series-archive__description">
-					<?php echo wp_kses_post( wpautop( $term->description ) ); ?>
+					<?php echo wp_kses_post( wpautop( $content_series_term->description ) ); ?>
 				</div>
 			<?php endif; ?>
 
 			<p class="content-series-archive__count">
 				<?php
+				$content_series_posts_count = count( $content_series_posts );
 				printf(
-					/* translators: %d: number of posts in series */
-					esc_html( _n(
-						'%d post in this series',
-						'%d posts in this series',
-						count( $posts ),
-						'content-series'
-					) ),
-					count( $posts )
+					esc_html(
+						/* translators: %d: number of posts in series */
+						_n(
+							'%d post in this series',
+							'%d posts in this series',
+							$content_series_posts_count,
+							'content-series'
+						)
+					),
+					esc_html( $content_series_posts_count )
 				);
 				?>
 			</p>
 		</div>
 	</header>
 
-	<?php if ( ! empty( $posts ) ) : ?>
+	<?php if ( ! empty( $content_series_posts ) ) : ?>
 		<ol class="content-series-archive__posts">
-			<?php foreach ( $posts as $index => $post ) : ?>
+			<?php foreach ( $content_series_posts as $content_series_index => $content_series_post ) : ?>
 				<li class="content-series-archive__post">
 					<article>
 						<h2 class="content-series-archive__post-title">
-							<a href="<?php echo esc_url( get_permalink( $post->ID ) ); ?>">
-								<?php echo esc_html( get_the_title( $post->ID ) ); ?>
+							<a href="<?php echo esc_url( get_permalink( $content_series_post->ID ) ); ?>">
+								<?php echo esc_html( get_the_title( $content_series_post->ID ) ); ?>
 							</a>
 						</h2>
 
 						<div class="content-series-archive__post-meta">
-							<time datetime="<?php echo esc_attr( get_the_date( 'c', $post->ID ) ); ?>">
-								<?php echo esc_html( get_the_date( '', $post->ID ) ); ?>
+							<time datetime="<?php echo esc_attr( get_the_date( 'c', $content_series_post->ID ) ); ?>">
+								<?php echo esc_html( get_the_date( '', $content_series_post->ID ) ); ?>
 							</time>
 						</div>
 
-						<?php if ( has_excerpt( $post->ID ) ) : ?>
+						<?php if ( has_excerpt( $content_series_post->ID ) ) : ?>
 							<div class="content-series-archive__post-excerpt">
-								<?php echo wp_kses_post( get_the_excerpt( $post->ID ) ); ?>
+								<?php echo wp_kses_post( get_the_excerpt( $content_series_post->ID ) ); ?>
 							</div>
 						<?php endif; ?>
 					</article>

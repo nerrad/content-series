@@ -11,3 +11,6 @@ wordpress-tests-lib/
 # wp-env
 .wp-env/
 .wp-env.json.override
+
+# Various AI things
+ignore/

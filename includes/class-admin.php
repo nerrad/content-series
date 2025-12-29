@@ -8,7 +8,7 @@
 namespace Content_Series;
 
 /**
- * Handles admin menu, settings page, and admin-specific functionality.
+ * Handles admin menu and admin-specific functionality.
  */
 class Admin {
 
@@ -16,115 +16,20 @@ class Admin {
 	 * Initialize admin hooks.
 	 */
 	public function init() {
-		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 		add_shortcode( 'content_series_catalog', array( $this, 'render_catalog_shortcode' ) );
 	}
 
 	/**
-	 * Add admin menu items.
+	 * Redirect main menu page to taxonomy page.
 	 */
-	public function add_admin_menu() {
-		add_menu_page(
-			__( 'Series', 'content-series' ),
-			__( 'Series', 'content-series' ),
-			'manage_categories',
-			'content-series',
-			array( $this, 'render_settings_page' ),
-			'dashicons-list-view',
-			25
-		);
-
-		add_submenu_page(
-			'content-series',
-			__( 'Manage Series', 'content-series' ),
-			__( 'Manage Series', 'content-series' ),
-			'manage_categories',
-			'content-series',
-			array( $this, 'render_settings_page' )
-		);
-
-		add_submenu_page(
-			'content-series',
-			__( 'All Series (Taxonomy)', 'content-series' ),
-			__( 'All Series', 'content-series' ),
-			'manage_categories',
-			'edit-tags.php?taxonomy=series'
-		);
-	}
-
-	/**
-	 * Render the settings page container.
-	 */
-	public function render_settings_page() {
+	public function redirect_to_taxonomy() {
 		// Check capabilities.
 		if ( ! current_user_can( 'manage_categories' ) ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'content-series' ) );
 		}
 
-		echo '<div id="content-series-settings" class="wrap"></div>';
-	}
-
-	/**
-	 * Enqueue admin assets.
-	 *
-	 * @param string $hook Current admin page hook.
-	 */
-	public function enqueue_admin_assets( $hook ) {
-		// Only on our settings page.
-		if ( 'toplevel_page_content-series' !== $hook ) {
-			return;
-		}
-
-		$asset_file = CONTENT_SERIES_PATH . 'build/settings/index.asset.php';
-
-		if ( ! file_exists( $asset_file ) ) {
-			// Show fallback message if assets not built.
-			add_action(
-				'admin_notices',
-				function () {
-					?>
-				<div class="notice notice-error">
-					<p>
-						<?php esc_html_e( 'Content Series assets have not been built. Please run `npm install && npm run build` in the plugin directory.', 'content-series' ); ?>
-					</p>
-				</div>
-					<?php
-				}
-			);
-			return;
-		}
-
-		$asset = require $asset_file;
-
-		wp_enqueue_script(
-			'content-series-settings',
-			CONTENT_SERIES_URL . 'build/settings/index.js',
-			$asset['dependencies'],
-			$asset['version'],
-			true
-		);
-
-		wp_enqueue_style(
-			'content-series-settings',
-			CONTENT_SERIES_URL . 'build/settings/index.css',
-			array( 'wp-components' ),
-			$asset['version']
-		);
-
-		// Localize data for React app.
-		wp_localize_script(
-			'content-series-settings',
-			'contentSeriesAdmin',
-			array(
-				'restUrl'       => rest_url( 'content-series/v1/' ),
-				'wpRestUrl'     => rest_url( 'wp/v2/' ),
-				'nonce'         => wp_create_nonce( 'wp_rest' ),
-				'taxonomyUrl'   => admin_url( 'edit-tags.php?taxonomy=series' ),
-				'adminUrl'      => admin_url(),
-				'pluginVersion' => CONTENT_SERIES_VERSION,
-			)
-		);
+		wp_safe_redirect( admin_url( 'edit-tags.php?taxonomy=series' ) );
+		exit;
 	}
 
 	/**

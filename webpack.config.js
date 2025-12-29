@@ -10,9 +10,6 @@ module.exports = {
 		// Blocks
 		'blocks/series-post-list/index': path.resolve( __dirname, 'src/blocks/series-post-list/index.ts' ),
 		'blocks/series-navigation/index': path.resolve( __dirname, 'src/blocks/series-navigation/index.ts' ),
-
-		// Admin settings page
-		'settings/index': path.resolve( __dirname, 'src/settings/index.tsx' ),
 	},
 	output: {
 		...defaultConfig.output,

@@ -15,7 +15,7 @@ A modern, block-editor-native WordPress plugin for managing content series. Grou
 - **Editor Integration**: Sidebar panel for managing series directly in the block editor
 - **Legacy Compatibility**: Compatible with the PublishPress Series plugin (uses the same taxonomy slug)
 - **REST API Support**: Full REST API integration for headless WordPress setups
-- **Custom Templates**: Archive and catalog templates for series display
+- **Block Templates**: Archive and catalog block templates for series display
 
 ## Requirements
 
@@ -158,13 +158,6 @@ Add the Series Post List block to display all posts in the current series. Optio
 - Highlight current post
 - Show/hide series title and icon
 
-### Templates
-
-The plugin includes custom templates for series display:
-
-- `taxonomy-series.php` - Archive template for series terms
-- `series-catalog.php` - Catalog template for listing all series
-
 ## Project Structure
 
 ```
@@ -185,7 +178,6 @@ content-series/
 │   │   └── series-post-list/
 │   ├── sidebar/        # Editor sidebar components
 │   └── types/          # TypeScript type definitions
-├── templates/          # PHP templates
 ├── tests/              # PHPUnit tests
 ├── content-series.php  # Main plugin file
 ├── composer.json       # PHP dependencies

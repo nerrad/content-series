@@ -124,6 +124,40 @@ A modern, block-editor-native WordPress plugin for managing content series. Grou
 - `pnpm env:clean` - Clean wp-env environment
 - `pnpm env:destroy` - Destroy wp-env environment
 
+### Git Worktrees
+
+This plugin is configured to use a shared wp-env environment across multiple git worktrees. This allows you to:
+
+- Share a single WordPress installation and database across all worktrees
+- Test different plugin variations without stopping/starting wp-env
+- Maintain consistent test data across worktree switches
+
+**How it works:**
+
+The `env:*` scripts use a wrapper script (`bin/scripts/wp-env-wrapper.sh`) that:
+
+1. Creates a shared environment directory at `~/.wp-env-shared/content-series/`
+2. Creates a symlink in that directory pointing to your current worktree
+3. Configures wp-env to use the shared environment with the symlinked plugin
+
+**Usage:**
+
+Simply use the standard `env:*` commands from any worktree:
+
+```bash
+# From any worktree
+pnpm env:start
+```
+
+The wrapper script automatically sets up the shared environment and points it to your current worktree. When you switch worktrees, the symlink is automatically updated to point to the new worktree on the next `env:*` command.
+
+**Benefits:**
+
+- Single WordPress download and installation
+- Shared database for consistent testing
+- No need to stop/start wp-env when switching worktrees
+- Automatic symlink management
+
 ## Usage
 
 ### Creating a Series

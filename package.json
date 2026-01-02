@@ -17,12 +17,12 @@
     "format": "wp-scripts format",
     "packages-update": "wp-scripts packages-update",
     "check-types": "tsc --noEmit",
-    "env:start": "wp-env start",
-    "env:stop": "wp-env stop",
-    "env:clean": "wp-env clean",
-    "env:destroy": "wp-env destroy",
-    "test": "wp-env run tests-cli --env-cwd=wp-content/plugins/new-series-plugin vendor/bin/phpunit",
-    "test:watch": "wp-env run tests-cli --env-cwd=wp-content/plugins/new-series-plugin vendor/bin/phpunit --watch"
+    "env:start": "bin/scripts/wp-env-wrapper.sh start",
+    "env:stop": "bin/scripts/wp-env-wrapper.sh stop",
+    "env:clean": "bin/scripts/wp-env-wrapper.sh clean",
+    "env:destroy": "bin/scripts/wp-env-wrapper.sh destroy",
+    "test": "bin/scripts/wp-env-wrapper.sh run tests-cli --env-cwd=wp-content/plugins/plugin vendor/bin/phpunit",
+    "test:watch": "bin/scripts/wp-env-wrapper.sh run tests-cli --env-cwd=wp-content/plugins/plugin vendor/bin/phpunit --watch"
   },
   "devDependencies": {
     "@wordpress/env": "^10.37.0",

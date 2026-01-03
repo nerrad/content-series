@@ -152,13 +152,14 @@ class Templates {
 				// Set the global template variable that WordPress uses.
 				// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 				global $_wp_current_template, $_wp_current_template_content;
-				// phpcs:enable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
+
 				$_wp_current_template = $catalog_template;
 
 				// Also set the template content global.
 				if ( isset( $catalog_template->content ) ) {
 					$_wp_current_template_content = $catalog_template->content;
 				}
+				// phpcs:enable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 			}
 		}
 
@@ -211,25 +212,44 @@ class Templates {
 	/**
 	 * Get template content for series catalog page.
 	 *
+	 * Uses the core Terms Query block with series taxonomy configuration.
+	 *
 	 * @return string Block template content.
 	 */
 	private function get_series_catalog_template() {
+		$all_series_title = esc_html__( 'All Series', 'content-series' );
+		$browse_text      = esc_html__( 'Browse all content series on this site.', 'content-series' );
+
 		return '<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
 
 <!-- wp:group {"tagName":"main","style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50"}}},"layout":{"type":"constrained"}} -->
 <main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--50)">
 
 <!-- wp:heading {"level":1} -->
-<h1 class="wp-block-heading">' . esc_html__( 'All Series', 'content-series' ) . '</h1>
+<h1 class="wp-block-heading">' . $all_series_title . '</h1>
 <!-- /wp:heading -->
 
 <!-- wp:paragraph -->
-<p>' . esc_html__( 'Browse all content series on this site.', 'content-series' ) . '</p>
+<p>' . $browse_text . '</p>
 <!-- /wp:paragraph -->
 
-<!-- wp:shortcode -->
-[content_series_catalog]
-<!-- /wp:shortcode -->
+<!-- wp:terms-query {"termQuery":{"perPage":100,"taxonomy":"series","order":"asc","orderBy":"name","include":[],"hideEmpty":false,"showNested":false,"inherit":false}} -->
+<!-- wp:term-template {"layout":{"type":"grid","columnCount":3}} -->
+<!-- wp:group {"style":{"spacing":{"blockGap":"0.5rem"}},"layout":{"type":"flex","orientation":"vertical","justifyContent":"center"}} -->
+<div class="wp-block-group">
+<!-- wp:image {"width":"150px","height":"150px","scale":"contain","metadata":{"bindings":{"url":{"source":"content-series/term-meta","args":{"key":"series_icon"}}}}} -->
+<figure class="wp-block-image is-resized"><img src="" alt="" style="object-fit:contain;width:150px;height:150px"/></figure>
+<!-- /wp:image -->
+
+<!-- wp:term-name {"textAlign":"center","level":3,"isLink":true} /-->
+
+<!-- wp:term-count {"textAlign":"center"} /-->
+
+<!-- wp:term-description {"textAlign":"center"} /-->
+</div>
+<!-- /wp:group -->
+<!-- /wp:term-template -->
+<!-- /wp:terms-query -->
 
 </main>
 <!-- /wp:group -->

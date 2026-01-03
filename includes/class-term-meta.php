@@ -135,13 +135,19 @@ class Term_Meta {
 	public function save_icon( $term_id ) {
 		// Verify nonce for term form submission.
 		if ( isset( $_POST['_wpnonce'] ) ) {
-			$nonce_action = $term_id ? "update-tag_{$term_id}" : 'add-tag';
-			if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), $nonce_action ) ) {
-				return;
+			$nonce_action    = $term_id ? "update-tag_{$term_id}" : 'add-tag';
+			$sanitized_nonce = sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) );
+			if ( ! wp_verify_nonce( $sanitized_nonce, $nonce_action ) ) {
+				wp_die( esc_html__( 'Nonce is missing.', 'content-series' ) );
 			}
-		} elseif ( ! isset( $_POST['_wpnonce_add-tag'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce_add-tag'] ) ), 'add-tag' ) ) {
+		} elseif ( isset( $_POST['_wpnonce_add-tag'] ) ) {
+			$sanitized_nonce = sanitize_text_field( wp_unslash( $_POST['_wpnonce_add-tag'] ) );
 			// For created_series action, check add-tag nonce.
-			return;
+			if ( ! wp_verify_nonce( $sanitized_nonce, 'add-tag' ) ) {
+				wp_die( esc_html__( 'Nonce is missing.', 'content-series' ) );
+			}
+		} else {
+			wp_die( esc_html__( 'Nonce is missing.', 'content-series' ) );
 		}
 
 		if ( isset( $_POST['series_icon'] ) ) {

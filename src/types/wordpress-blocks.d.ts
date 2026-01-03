@@ -1,0 +1,41 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+declare module "@wordpress/blocks" {
+  export interface BlockBindingsSourceConfig {
+    name: string;
+    label: string;
+    usesContext?: string[];
+    getFieldsList?: (args: any) => any[];
+    getValues?: (args: any) => Record<string, any>;
+  }
+
+  export interface BlockTypeSettings {
+    edit?: React.ComponentType<any>;
+    save?: () => JSX.Element | null;
+    [key: string]: any;
+  }
+
+  export function registerBlockBindingsSource(
+    config: BlockBindingsSourceConfig
+  ): void;
+
+  export function registerBlockType(
+    nameOrMetadata: string | { name: string; [key: string]: any },
+    settings?: BlockTypeSettings
+  ): void;
+
+  export function registerBlockVariation(
+    blockName: string,
+    variation: {
+      name: string;
+      title?: string;
+      description?: string;
+      category?: string;
+      keywords?: string[];
+      attributes?: Record<string, any>;
+      isActive?: (blockAttributes: any) => boolean;
+      innerBlocks?: any[];
+      scope?: string[];
+      [key: string]: any;
+    }
+  ): void;
+}

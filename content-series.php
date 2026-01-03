@@ -8,7 +8,7 @@
  * Author URI: https://your-site.com
  * Text Domain: content-series
  * Domain Path: /languages
- * Requires at least: 6.8
+ * Requires at least: 6.9
  * Requires PHP: 8.1
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html

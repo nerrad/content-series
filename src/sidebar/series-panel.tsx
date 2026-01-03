@@ -22,6 +22,14 @@ import type { SeriesOrder, WPTerm } from "../types";
 
 const TAXONOMY = "series";
 
+// TokenItem interface from FormTokenField
+interface TokenItem {
+  value: string;
+  status?: "error" | "validating" | "success";
+  title?: string;
+  isBorderless?: boolean;
+}
+
 interface EditorSelectReturn {
   postType: string | undefined;
   postId: number | undefined;
@@ -180,51 +188,63 @@ export default function SeriesPanel(): JSX.Element | null {
   }, [currentSeriesTerms]);
 
   // Handle series selection change
-  const handleSeriesChange = async (newNames: string[]): Promise<void> => {
-    const termIds: number[] = [];
-    const newSeriesOrder: SeriesOrder = { ...seriesOrder };
+  const handleSeriesChange = (tokens: (string | TokenItem)[]): void => {
+    // Extract string names from tokens
+    const newNames = tokens.map((token) =>
+      typeof token === "string" ? token : token.value
+    );
 
-    for (const name of newNames) {
-      // Find existing term
-      let term = allSeries.find(
-        (t) => t.name.toLowerCase() === name.toLowerCase()
-      );
+    // Process series changes asynchronously
+    const processChanges = async (): Promise<void> => {
+      const termIds: number[] = [];
+      const newSeriesOrder: SeriesOrder = { ...seriesOrder };
 
-      if (!term) {
-        // Create new term
-        setIsCreating(true);
-        try {
-          term = await saveEntityRecord("taxonomy", TAXONOMY, {
-            name,
-          });
-        } catch (error) {
-          console.error("Failed to create series:", error);
-          continue;
+      for (const name of newNames) {
+        // Find existing term
+        let term = allSeries.find(
+          (t) => t.name.toLowerCase() === name.toLowerCase()
+        );
+
+        if (!term) {
+          // Create new term
+          setIsCreating(true);
+          try {
+            term = await saveEntityRecord("taxonomy", TAXONOMY, {
+              name,
+            });
+          } catch (error) {
+            console.error("Failed to create series:", error);
+            continue;
+          } finally {
+            setIsCreating(false);
+          }
         }
-        setIsCreating(false);
-      }
 
-      if (term && term.id) {
-        termIds.push(term.id);
+        if (term && term.id) {
+          termIds.push(term.id);
 
-        // Set default order if new
-        if (!newSeriesOrder[term.id]) {
-          newSeriesOrder[term.id] = 1;
+          // Set default order if new
+          if (!newSeriesOrder[term.id]) {
+            newSeriesOrder[term.id] = 1;
+          }
         }
       }
-    }
 
-    // Remove order for removed series
-    Object.keys(newSeriesOrder).forEach((id) => {
-      if (!termIds.includes(parseInt(id, 10))) {
-        delete newSeriesOrder[parseInt(id, 10)];
-      }
-    });
+      // Remove order for removed series
+      Object.keys(newSeriesOrder).forEach((id) => {
+        if (!termIds.includes(parseInt(id, 10))) {
+          delete newSeriesOrder[parseInt(id, 10)];
+        }
+      });
 
-    editPost({
-      [TAXONOMY]: termIds,
-      series_order: newSeriesOrder,
-    });
+      editPost({
+        [TAXONOMY]: termIds,
+        series_order: newSeriesOrder,
+      });
+    };
+
+    // Fire and forget - errors are logged within processChanges
+    void processChanges();
   };
 
   // Handle order change for a specific series
@@ -272,7 +292,6 @@ export default function SeriesPanel(): JSX.Element | null {
             __experimentalExpandOnFocus
             __experimentalShowHowTo={false}
             __next40pxDefaultSize
-            __nextHasNoMarginBottom
             disabled={isSaving || isCreating}
             placeholder={__("Search or create series...", "content-series")}
           />

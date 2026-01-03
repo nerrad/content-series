@@ -134,9 +134,9 @@ class Term_Meta {
 	 */
 	public function save_icon( $term_id ) {
 		// Verify nonce for term form submission.
-		if ( isset( $_REQUEST['_wpnonce'] ) ) {
+		if ( isset( $_POST['_wpnonce'] ) ) {
 			$nonce_action    = $term_id ? "update-tag_{$term_id}" : 'add-tag';
-			$sanitized_nonce = sanitize_text_field( wp_unslash( $_REQUEST['_wpnonce'] ) );
+			$sanitized_nonce = sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) );
 			if ( ! wp_verify_nonce( $sanitized_nonce, $nonce_action ) ) {
 				wp_die( esc_html__( 'Nonce is missing.', 'content-series' ) );
 			}

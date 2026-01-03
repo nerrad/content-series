@@ -16,19 +16,7 @@ class Block_Variations {
 	 * Initialize block variations hooks.
 	 */
 	public function init() {
-		add_action( 'init', array( $this, 'register_variations' ) );
 		add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_variation_assets' ) );
-	}
-
-	/**
-	 * Register block variations via PHP.
-	 *
-	 * Note: Block variations for core blocks are typically registered via JavaScript.
-	 * This method registers the variation server-side for better compatibility.
-	 */
-	public function register_variations() {
-		// The variation is registered via JavaScript for better editor support.
-		// See enqueue_variation_assets() for the JS registration.
 	}
 
 	/**

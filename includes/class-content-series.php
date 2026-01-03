@@ -22,6 +22,8 @@ class Content_Series {
 		$this->init_term_meta();
 		$this->init_rest_api();
 		$this->init_blocks();
+		$this->init_block_bindings();
+		$this->init_block_variations();
 		$this->init_templates();
 
 		// Admin-only components.
@@ -75,6 +77,24 @@ class Content_Series {
 	 */
 	private function init_blocks() {
 		add_action( 'init', array( $this, 'register_blocks' ) );
+	}
+
+	/**
+	 * Initialize block bindings for term meta.
+	 */
+	private function init_block_bindings() {
+		require_once CONTENT_SERIES_PATH . 'includes/class-block-bindings.php';
+		$block_bindings = new Block_Bindings();
+		$block_bindings->init();
+	}
+
+	/**
+	 * Initialize block variations for series catalog.
+	 */
+	private function init_block_variations() {
+		require_once CONTENT_SERIES_PATH . 'includes/class-block-variations.php';
+		$block_variations = new Block_Variations();
+		$block_variations->init();
 	}
 
 	/**

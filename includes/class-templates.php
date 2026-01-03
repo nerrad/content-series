@@ -152,13 +152,14 @@ class Templates {
 				// Set the global template variable that WordPress uses.
 				// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 				global $_wp_current_template, $_wp_current_template_content;
-				// phpcs:enable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
+
 				$_wp_current_template = $catalog_template;
 
 				// Also set the template content global.
 				if ( isset( $catalog_template->content ) ) {
 					$_wp_current_template_content = $catalog_template->content;
 				}
+				// phpcs:enable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 			}
 		}
 

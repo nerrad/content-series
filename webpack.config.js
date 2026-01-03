@@ -13,6 +13,9 @@ module.exports = {
 
 		// Block bindings
 		'bindings/index': path.resolve( __dirname, 'src/bindings/index.ts' ),
+
+		// Block variations
+		'variations/index': path.resolve( __dirname, 'src/variations/index.ts' ),
 	},
 	output: {
 		...defaultConfig.output,

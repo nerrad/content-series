@@ -22,4 +22,20 @@ declare module "@wordpress/blocks" {
     nameOrMetadata: string | { name: string; [key: string]: any },
     settings?: BlockTypeSettings
   ): void;
+
+  export function registerBlockVariation(
+    blockName: string,
+    variation: {
+      name: string;
+      title?: string;
+      description?: string;
+      category?: string;
+      keywords?: string[];
+      attributes?: Record<string, any>;
+      isActive?: (blockAttributes: any) => boolean;
+      innerBlocks?: any[];
+      scope?: string[];
+      [key: string]: any;
+    }
+  ): void;
 }

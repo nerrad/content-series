@@ -169,12 +169,31 @@
 		if (previewCount !== null) {
 			totalPartsText += ' ( -> ' + previewCount + ' )';
 		}
-		
-		label.innerHTML = 
-			'<span class="series-name">' + series.name + '</span>' +
-			'<span class="part-label"> - Part</span>' +
-			'<input type="number" name="series_part_' + series.id + '" value="' + currentPart + '" min="1" class="content-series-part-input" data-series-id="' + series.id + '" />' +
-			'<span class="total-parts">' + totalPartsText + '</span>';
+
+		// Create elements safely using DOM methods to prevent XSS.
+		var seriesNameSpan = document.createElement('span');
+		seriesNameSpan.className = 'series-name';
+		seriesNameSpan.textContent = series.name; // textContent escapes HTML
+		label.appendChild(seriesNameSpan);
+
+		var partLabelSpan = document.createElement('span');
+		partLabelSpan.className = 'part-label';
+		partLabelSpan.textContent = ' - Part';
+		label.appendChild(partLabelSpan);
+
+		var input = document.createElement('input');
+		input.type = 'number';
+		input.name = 'series_part_' + series.id;
+		input.value = currentPart;
+		input.min = '1';
+		input.className = 'content-series-part-input';
+		input.setAttribute('data-series-id', series.id);
+		label.appendChild(input);
+
+		var totalPartsSpan = document.createElement('span');
+		totalPartsSpan.className = 'total-parts';
+		totalPartsSpan.textContent = totalPartsText;
+		label.appendChild(totalPartsSpan);
 
 		field.appendChild(label);
 		return field;

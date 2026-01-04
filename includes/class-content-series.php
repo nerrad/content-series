@@ -127,6 +127,10 @@ class Content_Series {
 
 	/**
 	 * Register blocks.
+	 *
+	 * Uses register_block_type_from_metadata() which explicitly reads from block.json.
+	 * While register_block_type() works identically with a directory path, _from_metadata()
+	 * is more semantically clear about the registration method.
 	 */
 	public function register_blocks() {
 		// Series Post List block.

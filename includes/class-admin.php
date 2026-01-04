@@ -13,13 +13,6 @@ namespace Content_Series;
 class Admin {
 
 	/**
-	 * Track if Quick Edit fields have been added to avoid duplicates.
-	 *
-	 * @var bool
-	 */
-	private static $quick_edit_fields_added = false;
-
-	/**
 	 * Initialize admin hooks.
 	 */
 	public function init() {
@@ -29,6 +22,9 @@ class Admin {
 		add_action( 'quick_edit_custom_box', array( $this, 'add_quick_edit_fields' ), 10, 2 );
 		add_action( 'save_post', array( $this, 'save_quick_edit_series_parts' ) );
 		add_action( 'admin_footer-edit.php', array( $this, 'enqueue_quick_edit_scripts' ) );
+		
+		// Add inline data to post rows for Quick Edit.
+		add_action( 'add_inline_data', array( $this, 'add_inline_series_data' ), 10, 2 );
 	}
 
 	/**
@@ -122,6 +118,46 @@ class Admin {
 	}
 
 	/**
+	 * Add inline series data to post rows for Quick Edit JavaScript.
+	 * Adds data to the existing inline data container that WordPress creates.
+	 *
+	 * @param WP_Post      $post             The current post object.
+	 * @param WP_Post_Type $post_type_object The current post's post type object.
+	 */
+	public function add_inline_series_data( $post, $post_type_object ) {
+		// Only add to posts.
+		if ( 'post' !== $post->post_type ) {
+			return;
+		}
+
+		// Get series assignments and part numbers for this post.
+		$series = get_the_terms( $post->ID, CONTENT_SERIES_TAXONOMY );
+		if ( ! $series || is_wp_error( $series ) ) {
+			return;
+		}
+
+		$series_data = array();
+		foreach ( $series as $term ) {
+			$part = Post_Meta::get_post_series_part( $post->ID, $term->term_id );
+			$series_data[ $term->term_id ] = array(
+				'id'    => $term->term_id,
+				'name'  => $term->name,
+				'count' => $term->count,
+				'part'  => $part,
+			);
+		}
+
+		if ( ! empty( $series_data ) ) {
+			// WordPress creates #inline_{post_id} container via get_inline_data().
+			// Add our data as a hidden div within that container.
+			$data = wp_json_encode( $series_data );
+			?>
+			<div class="hidden" data-series-data="<?php echo esc_attr( $data ); ?>"></div>
+			<?php
+		}
+	}
+
+	/**
 	 * Add series part fields to Quick Edit form.
 	 *
 	 * @param string $column_name Column name.
@@ -141,54 +177,10 @@ class Admin {
 			return;
 		}
 
-		// Only add once (use static flag to avoid duplicates).
-		if ( self::$quick_edit_fields_added ) {
-			return;
-		}
-
-		self::$quick_edit_fields_added = true;
-
-		// Get all series terms.
-		$series_terms = get_terms(
-			array(
-				'taxonomy'   => CONTENT_SERIES_TAXONOMY,
-				'hide_empty' => false,
-				'orderby'    => 'name',
-				'order'      => 'ASC',
-			)
-		);
-
-		if ( empty( $series_terms ) || is_wp_error( $series_terms ) ) {
-			return;
-		}
-
-		// Get post counts for each series.
-		$series_counts = array();
-		foreach ( $series_terms as $term ) {
-			$series_counts[ $term->term_id ] = $term->count;
-		}
-
 		?>
 		<div class="content-series-parts-container" id="content-series-parts-container" style="display: none;">
-			<div class="content-series-quick-edit-parts">
-				<?php foreach ( $series_terms as $term ) : ?>
-					<?php $total_parts = isset( $series_counts[ $term->term_id ] ) ? $series_counts[ $term->term_id ] : 0; ?>
-					<div class="content-series-part-field" data-series-id="<?php echo esc_attr( $term->term_id ); ?>" data-total-parts="<?php echo esc_attr( $total_parts ); ?>" style="display: none;">
-						<label>
-							<span class="series-name"><?php echo esc_html( $term->name ); ?></span>
-							<span class="part-label"> - Part</span>
-							<input 
-								type="number" 
-								name="series_part_<?php echo esc_attr( $term->term_id ); ?>" 
-								value="" 
-								min="1" 
-								class="content-series-part-input"
-								data-series-id="<?php echo esc_attr( $term->term_id ); ?>"
-							/>
-							<span class="total-parts">of <?php echo esc_html( $total_parts ); ?></span>
-						</label>
-					</div>
-				<?php endforeach; ?>
+			<div class="content-series-quick-edit-parts" id="content-series-quick-edit-parts">
+				<!-- Fields will be dynamically created by JavaScript -->
 			</div>
 		</div>
 		<?php
@@ -259,184 +251,193 @@ class Admin {
 			return;
 		}
 
-		// Get all series terms for JavaScript.
-		$series_terms = get_terms(
-			array(
-				'taxonomy'   => CONTENT_SERIES_TAXONOMY,
-				'hide_empty' => false,
-				'orderby'    => 'name',
-				'order'      => 'ASC',
-			)
-		);
-
-		$series_data = array();
-		if ( ! empty( $series_terms ) && ! is_wp_error( $series_terms ) ) {
-			foreach ( $series_terms as $term ) {
-				$series_data[] = array(
-					'id'   => $term->term_id,
-					'name' => $term->name,
-				);
-			}
-		}
-
-		// Get all posts with their series assignments and part numbers.
-		$posts_data = array();
-		$posts      = get_posts(
-			array(
-				'post_type'      => 'post',
-				'posts_per_page' => -1,
-				'post_status'    => 'any',
-			)
-		);
-
-		foreach ( $posts as $post ) {
-			$series = get_the_terms( $post->ID, CONTENT_SERIES_TAXONOMY );
-			if ( ! $series || is_wp_error( $series ) ) {
-				continue;
-			}
-
-			$post_series = array();
-			foreach ( $series as $term ) {
-				$part = Post_Meta::get_post_series_part( $post->ID, $term->term_id );
-				$post_series[ $term->term_id ] = $part;
-			}
-
-			if ( ! empty( $post_series ) ) {
-				$posts_data[ $post->ID ] = $post_series;
-			}
-		}
+		// Get REST API base URL for fetching series data.
+		$rest_url = rest_url( 'wp/v2/' );
 
 		?>
 		<script type="text/javascript">
 		(function() {
-			var contentSeriesData = {
-				series: <?php echo wp_json_encode( $series_data ); ?>,
-				posts: <?php echo wp_json_encode( $posts_data ); ?>
-			};
+			var restUrl = <?php echo wp_json_encode( $rest_url ); ?>;
+			var seriesCache = {}; // Cache for series data (id, name, count)
 
-			// Function to update series part fields visibility and values.
+			// Function to get series data - first from inline data, then from API if needed.
+			function getSeriesData(seriesName, callback) {
+				// Check cache first.
+				var cached = Object.values(seriesCache).find(function(s) {
+					return s.name.toLowerCase() === seriesName.toLowerCase();
+				});
+				if (cached) {
+					callback(cached);
+					return;
+				}
+
+				// Check if we can find it in any inline data on the page.
+				var inlineDataElements = document.querySelectorAll('[data-series-data]');
+				for (var i = 0; i < inlineDataElements.length; i++) {
+					try {
+						var data = JSON.parse(inlineDataElements[i].getAttribute('data-series-data'));
+						var series = Object.values(data).find(function(s) {
+							return s.name.toLowerCase() === seriesName.toLowerCase();
+						});
+						if (series) {
+							// Normalize the series object (ensure it has all needed properties).
+							var normalizedSeries = {
+								id: parseInt(series.id, 10),
+								name: series.name,
+								count: parseInt(series.count, 10) || 0
+							};
+							seriesCache[normalizedSeries.id] = normalizedSeries;
+							callback(normalizedSeries);
+							return;
+						}
+					} catch (e) {
+						// Ignore parse errors.
+					}
+				}
+
+				// Not found in inline data, fetch from API.
+				fetch(restUrl + 'series?search=' + encodeURIComponent(seriesName) + '&per_page=1')
+					.then(function(response) {
+						return response.json();
+					})
+					.then(function(data) {
+						if (data && data.length > 0) {
+							var series = {
+								id: data[0].id,
+								name: data[0].name,
+								count: data[0].count || 0
+							};
+							seriesCache[series.id] = series;
+							callback(series);
+						} else {
+							callback(null);
+						}
+					})
+					.catch(function(error) {
+						console.error('Error fetching series data:', error);
+						callback(null);
+					});
+			}
+
+			// Function to get current part numbers for a post from inline data.
+			function getCurrentParts(postId, callback) {
+				if (!postId) {
+					callback({});
+					return;
+				}
+
+				// Get from the inline data container (WordPress creates #inline_{postId}).
+				var inlineContainer = document.getElementById('inline_' + postId);
+				if (!inlineContainer) {
+					callback({});
+					return;
+				}
+
+				// Find the series data element within the inline container.
+				var seriesDataElement = inlineContainer.querySelector('[data-series-data]');
+				if (!seriesDataElement) {
+					callback({});
+					return;
+				}
+
+				try {
+					var seriesData = JSON.parse(seriesDataElement.getAttribute('data-series-data'));
+					var parts = {};
+					Object.keys(seriesData).forEach(function(seriesId) {
+						parts[parseInt(seriesId, 10)] = parseInt(seriesData[seriesId].part, 10);
+					});
+					callback(parts);
+				} catch (e) {
+					console.error('Error parsing series data:', e);
+					callback({});
+				}
+			}
+
+			// Function to create a series part field.
+			function createSeriesPartField(series, currentPart) {
+				var field = document.createElement('div');
+				field.className = 'content-series-part-field show';
+				field.setAttribute('data-series-id', series.id);
+				field.setAttribute('data-total-parts', series.count);
+
+				var label = document.createElement('label');
+				label.innerHTML = 
+					'<span class="series-name">' + series.name + '</span>' +
+					'<span class="part-label"> - Part</span>' +
+					'<input type="number" name="series_part_' + series.id + '" value="' + currentPart + '" min="1" class="content-series-part-input" data-series-id="' + series.id + '" />' +
+					'<span class="total-parts">of ' + series.count + '</span>';
+
+				field.appendChild(label);
+				return field;
+			}
+
+			// Function to update series part fields - creates fields dynamically.
 			function updateSeriesPartFields(row, postId) {
 				if (!row) {
 					return;
 				}
 
-				// Get series assignments for this post from the taxonomy inputs.
-				// WordPress uses different formats for hierarchical vs non-hierarchical taxonomies.
-				var selectedSeries = [];
-				
-				// Try hierarchical format first (checkboxes).
-				var seriesCheckboxes = row.querySelectorAll('input[name="tax_input[series][]"]:checked');
-				if (seriesCheckboxes.length > 0) {
-					seriesCheckboxes.forEach(function(checkbox) {
-						var seriesId = parseInt(checkbox.value, 10);
-						if (!isNaN(seriesId) && selectedSeries.indexOf(seriesId) === -1) {
-							selectedSeries.push(seriesId);
-						}
-					});
-				}
-				
-				// If no checkboxes found, try other formats.
-				if (selectedSeries.length === 0) {
-					// Check for hidden inputs that WordPress might use.
-					var hiddenInputs = row.querySelectorAll('input[type="hidden"][name*="series"]');
-					hiddenInputs.forEach(function(input) {
-						var value = input.value.trim();
-						if (value) {
-							var seriesId = parseInt(value, 10);
-							if (!isNaN(seriesId) && selectedSeries.indexOf(seriesId) === -1) {
-								selectedSeries.push(seriesId);
-							}
-						}
-					});
-					
-					// Try text input format for non-hierarchical taxonomies.
-					if (selectedSeries.length === 0) {
-						var possibleInputs = [
-							'input[name="tax_input[series]"]',
-							'input.tax_input_series',
-							'input[data-wp-taxonomy="series"]'
-						];
-						
-						var seriesInput = null;
-						for (var i = 0; i < possibleInputs.length; i++) {
-							seriesInput = row.querySelector(possibleInputs[i]);
-							if (seriesInput) {
-								break;
-							}
-						}
-						
-						if (seriesInput && seriesInput.value) {
-							// Parse comma-separated term names or IDs.
-							var values = seriesInput.value.split(',').map(function(v) { return v.trim(); });
-							// Try to match with series data to get IDs.
-							values.forEach(function(value) {
-								if (!value) {
-									return;
-								}
-								// First try to find by name (case-insensitive).
-								var series = contentSeriesData.series.find(function(s) {
-									return s.name.toLowerCase() === value.toLowerCase();
-								});
-								// If not found by name, try by ID.
-								if (!series) {
-									var valueAsInt = parseInt(value, 10);
-									if (!isNaN(valueAsInt)) {
-										series = contentSeriesData.series.find(function(s) {
-											return s.id === valueAsInt;
-										});
-									}
-								}
-								if (series && selectedSeries.indexOf(series.id) === -1) {
-									selectedSeries.push(series.id);
-								}
-							});
-						}
-					}
-				}
-
-				// If no series detected from form, fall back to post data.
-				if (selectedSeries.length === 0 && postId && contentSeriesData.posts[postId]) {
-					selectedSeries = Object.keys(contentSeriesData.posts[postId]).map(function(id) {
-						return parseInt(id, 10);
-					});
-				}
-
-				// Show/hide and populate series part fields.
 				var partsContainer = row.querySelector('#content-series-parts-container');
-				if (partsContainer && selectedSeries.length > 0) {
-					partsContainer.style.display = '';
-				} else if (partsContainer) {
-					partsContainer.style.display = 'none';
+				var partsWrapper = row.querySelector('#content-series-quick-edit-parts');
+				if (!partsContainer || !partsWrapper) {
+					return;
 				}
 
-				contentSeriesData.series.forEach(function(series) {
-					var field = row.querySelector('.content-series-part-field[data-series-id="' + series.id + '"]');
-					if (!field) {
-						return;
-					}
+				// Get series assignments from the textarea.
+				var seriesTextarea = row.querySelector('textarea.tax_input_series, textarea[name="tax_input[series]"]');
+				if (!seriesTextarea || !seriesTextarea.value) {
+					partsContainer.style.display = 'none';
+					partsWrapper.innerHTML = '';
+					return;
+				}
 
-					var input = field.querySelector('input.content-series-part-input[data-series-id="' + series.id + '"]');
-					var isSelected = selectedSeries.indexOf(series.id) !== -1;
-					
-					if (isSelected) {
-						// Show field and populate with current value.
-						field.style.display = 'block';
-						field.classList.add('show');
-						var currentPart = 1;
-						if (postId && contentSeriesData.posts[postId] && contentSeriesData.posts[postId][series.id]) {
-							currentPart = contentSeriesData.posts[postId][series.id];
+				// Parse comma-separated term names.
+				var seriesNames = seriesTextarea.value.split(',').map(function(v) { return v.trim(); }).filter(function(v) { return v; });
+				
+				if (seriesNames.length === 0) {
+					partsContainer.style.display = 'none';
+					partsWrapper.innerHTML = '';
+					return;
+				}
+
+				// Clear existing fields.
+				partsWrapper.innerHTML = '';
+
+				// Fetch series data and create fields.
+				var pendingRequests = seriesNames.length;
+				var allSeries = [];
+
+				// First, fetch all series data.
+				seriesNames.forEach(function(seriesName) {
+					getSeriesData(seriesName, function(series) {
+						if (series) {
+							allSeries.push(series);
 						}
-						if (input) {
-							input.value = currentPart;
-						}
+						pendingRequests--;
+
+						// When all series are fetched, get part numbers and create fields.
+						if (pendingRequests === 0) {
+							if (allSeries.length === 0) {
+								partsContainer.style.display = 'none';
+								return;
+							}
+
+				// Get all part numbers for this post from inline data.
+				getCurrentParts(postId, function(parts) {
+					allSeries.forEach(function(series) {
+						var currentPart = parts[series.id] || 1;
+						var field = createSeriesPartField(series, currentPart);
+						partsWrapper.appendChild(field);
+					});
+
+					if (allSeries.length > 0) {
+						partsContainer.style.display = '';
 					} else {
-						// Hide field.
-						field.style.display = 'none';
-						field.classList.remove('show');
-						if (input) {
-							input.value = '';
-						}
+						partsContainer.style.display = 'none';
 					}
+				});
+						}
+					});
 				});
 			}
 
@@ -479,6 +480,7 @@ class Admin {
 				return true;
 			}
 
+
 			// Extend inlineEditPost.edit to populate series part fields.
 			var wpInlineEdit = inlineEditPost.edit;
 			inlineEditPost.edit = function(id) {
@@ -495,21 +497,13 @@ class Admin {
 						// Position the container and update fields.
 						positionSeriesPartsContainer(row);
 						updateSeriesPartFields(row, post_id);
-						
-						// Try again after a short delay in case DOM isn't fully ready.
-						setTimeout(function() {
-							var currentRow = document.getElementById('edit-' + post_id);
-							if (currentRow) {
-								positionSeriesPartsContainer(currentRow);
-								updateSeriesPartFields(currentRow, post_id);
-							}
-						}, 100);
 					}
 				}
 			};
 
 			// Update series part fields when series selection changes.
 			// Listen for changes on the series textarea.
+			var updateTimeout;
 			document.addEventListener('input', function(event) {
 				var target = event.target;
 				if (target && target.matches && target.matches('#the-list .inline-edit-row textarea.tax_input_series, #the-list .inline-edit-row textarea[name="tax_input[series]"]')) {
@@ -520,7 +514,11 @@ class Admin {
 						if (postIdMatch) {
 							postId = parseInt(postIdMatch[1], 10);
 						}
-						updateSeriesPartFields(row, postId);
+						// Debounce to avoid too many API calls while typing.
+						clearTimeout(updateTimeout);
+						updateTimeout = setTimeout(function() {
+							updateSeriesPartFields(row, postId);
+						}, 300);
 					}
 				}
 			});

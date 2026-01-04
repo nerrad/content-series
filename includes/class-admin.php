@@ -263,14 +263,12 @@ class Admin {
 			true
 		);
 
-		// Localize script to pass PHP data to JavaScript.
-		wp_localize_script(
-			'content-series-quick-edit',
-			'contentSeriesQuickEdit',
-			array(
-				'restUrl' => $rest_url,
-			)
+		// Add inline script to pass PHP data to JavaScript.
+		$inline_script = sprintf(
+			'var contentSeriesQuickEditData = %s;',
+			wp_json_encode( array( 'restUrl' => $rest_url ) )
 		);
+		wp_add_inline_script( 'content-series-quick-edit', $inline_script, 'before' );
 
 		// Enqueue CSS file.
 		wp_enqueue_style(

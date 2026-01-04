@@ -22,7 +22,7 @@ class Admin {
 		add_action( 'quick_edit_custom_box', array( $this, 'add_quick_edit_fields' ), 10, 2 );
 		add_action( 'save_post', array( $this, 'save_quick_edit_series_parts' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_quick_edit_scripts' ) );
-		
+
 		// Add inline data to post rows for Quick Edit.
 		add_action( 'add_inline_data', array( $this, 'add_inline_series_data' ), 10, 2 );
 	}
@@ -138,7 +138,7 @@ class Admin {
 
 		$series_data = array();
 		foreach ( $series as $term ) {
-			$part = Post_Meta::get_post_series_part( $post->ID, $term->term_id );
+			$part                          = Post_Meta::get_post_series_part( $post->ID, $term->term_id );
 			$series_data[ $term->term_id ] = array(
 				'id'    => $term->term_id,
 				'name'  => $term->name,
@@ -208,8 +208,12 @@ class Admin {
 		}
 
 		// Check if this is from Quick Edit (inline-save action).
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing
 		if ( ! isset( $_POST['action'] ) || 'inline-save' !== $_POST['action'] ) {
+			return;
+		}
+
+		// Verify nonce for Quick Edit.
+		if ( ! isset( $_POST['_inline_edit'] ) || ! wp_verify_nonce( $_POST['_inline_edit'], 'inlineeditnonce' ) ) {
 			return;
 		}
 
@@ -228,11 +232,9 @@ class Admin {
 		// Save series part values.
 		foreach ( $series_terms as $term ) {
 			$input_name = 'series_part_' . $term->term_id;
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing
 			if ( isset( $_POST[ $input_name ] ) ) {
 				$part_value = sanitize_text_field( wp_unslash( $_POST[ $input_name ] ) );
 				$part_value = absint( $part_value );
-				
 				// Only update if value is valid (>= 1).
 				if ( $part_value >= 1 ) {
 					Post_Meta::set_post_series_part( $post_id, $term->term_id, $part_value );

@@ -412,9 +412,10 @@ class Admin {
 			}
 
 			// Function to create a series part field.
-			function createSeriesPartField(series, currentPart) {
+			function createSeriesPartField(series, currentPart, isNewAddition) {
 				// Ensure count is defined (should always be set, but safety check).
 				var count = (series.count !== undefined && series.count !== null) ? series.count : 0;
+				var previewCount = isNewAddition ? count + 1 : null;
 				
 				var field = document.createElement('div');
 				field.className = 'content-series-part-field show';
@@ -422,11 +423,16 @@ class Admin {
 				field.setAttribute('data-total-parts', count);
 
 				var label = document.createElement('label');
+				var totalPartsText = 'of ' + count;
+				if (previewCount !== null) {
+					totalPartsText += ' ( -> ' + previewCount + ' )';
+				}
+				
 				label.innerHTML = 
 					'<span class="series-name">' + series.name + '</span>' +
 					'<span class="part-label"> - Part</span>' +
 					'<input type="number" name="series_part_' + series.id + '" value="' + currentPart + '" min="1" class="content-series-part-input" data-series-id="' + series.id + '" />' +
-					'<span class="total-parts">of ' + count + '</span>';
+					'<span class="total-parts">' + totalPartsText + '</span>';
 
 				field.appendChild(label);
 				return field;
@@ -533,7 +539,9 @@ class Admin {
 								// Create fields for all unique series.
 								uniqueSeries.forEach(function(series) {
 									var currentPart = parts[series.id] || 1;
-									var field = createSeriesPartField(series, currentPart);
+									// Check if this post is being newly added to the series (not in parts means it's new).
+									var isNewAddition = !parts[series.id];
+									var field = createSeriesPartField(series, currentPart, isNewAddition);
 									partsWrapper.appendChild(field);
 								});
 

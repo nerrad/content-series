@@ -78,7 +78,11 @@ export function registerSeriesTermMetaBindings(): void {
 			return seriesMetaFields;
 		},
 
-		getValues( { bindings, context, select }: GetValuesArgs ): Record< string, string > {
+		getValues( {
+			bindings,
+			context,
+			select,
+		}: GetValuesArgs ): Record< string, string > {
 			const values: Record< string, string > = {};
 			const termId = context.termId;
 			const taxonomy = context.taxonomy || 'series';
@@ -94,7 +98,9 @@ export function registerSeriesTermMetaBindings(): void {
 				termId
 			) as WPTerm | undefined;
 
-			for ( const [ attributeName, binding ] of Object.entries( bindings ) ) {
+			for ( const [ attributeName, binding ] of Object.entries(
+				bindings
+			) ) {
 				const key = binding.args?.key;
 				if ( ! key ) {
 					values[ attributeName ] = '';

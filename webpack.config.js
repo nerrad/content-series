@@ -8,14 +8,23 @@ module.exports = {
 		'sidebar/index': path.resolve( __dirname, 'src/sidebar/index.ts' ),
 
 		// Blocks
-		'blocks/series-post-list/index': path.resolve( __dirname, 'src/blocks/series-post-list/index.ts' ),
-		'blocks/series-navigation/index': path.resolve( __dirname, 'src/blocks/series-navigation/index.ts' ),
+		'blocks/series-post-list/index': path.resolve(
+			__dirname,
+			'src/blocks/series-post-list/index.ts'
+		),
+		'blocks/series-navigation/index': path.resolve(
+			__dirname,
+			'src/blocks/series-navigation/index.ts'
+		),
 
 		// Block bindings
 		'bindings/index': path.resolve( __dirname, 'src/bindings/index.ts' ),
 
 		// Block variations
-		'variations/index': path.resolve( __dirname, 'src/variations/index.ts' ),
+		'variations/index': path.resolve(
+			__dirname,
+			'src/variations/index.ts'
+		),
 	},
 	output: {
 		...defaultConfig.output,

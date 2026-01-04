@@ -17,7 +17,14 @@ import { store as coreStore } from '@wordpress/core-data';
 import apiFetch from '@wordpress/api-fetch';
 import { useState, useEffect } from '@wordpress/element';
 
-import type { NavigationBlockAttributes, BlockContext, SeriesData, SeriesPost, SeriesOrder, WPPost } from '../../types';
+import type {
+	NavigationBlockAttributes,
+	BlockContext,
+	SeriesData,
+	SeriesPost,
+	SeriesOrder,
+	WPPost,
+} from '../../types';
 
 interface EditProps {
 	attributes: NavigationBlockAttributes;
@@ -36,7 +43,11 @@ const ARROW_STYLES: Record< string, ArrowStyle > = {
 	none: { prev: '', next: '' },
 };
 
-export default function Edit( { attributes, setAttributes, context }: EditProps ): JSX.Element {
+export default function Edit( {
+	attributes,
+	setAttributes,
+	context,
+}: EditProps ): JSX.Element {
 	const {
 		showTitle,
 		showSeriesName,
@@ -59,10 +70,18 @@ export default function Edit( { attributes, setAttributes, context }: EditProps 
 			}
 
 			const coreSelectors = select( coreStore ) as {
-				getEntityRecord: ( kind: string, name: string, id: number ) => WPPost | undefined;
+				getEntityRecord: (
+					kind: string,
+					name: string,
+					id: number
+				) => WPPost | undefined;
 			};
 
-			const post = coreSelectors.getEntityRecord( 'postType', 'post', postId );
+			const post = coreSelectors.getEntityRecord(
+				'postType',
+				'post',
+				postId
+			);
 
 			if ( ! post || ! post.series || post.series.length === 0 ) {
 				return { series: [], seriesOrder: {} };
@@ -108,7 +127,10 @@ export default function Edit( { attributes, setAttributes, context }: EditProps 
 	} );
 
 	// Find prev/next posts
-	const getNavPosts = (): { prev: SeriesPost | null; next: SeriesPost | null } => {
+	const getNavPosts = (): {
+		prev: SeriesPost | null;
+		next: SeriesPost | null;
+	} => {
 		if ( ! seriesData || ! seriesData.posts ) {
 			return { prev: null, next: null };
 		}
@@ -122,7 +144,8 @@ export default function Edit( { attributes, setAttributes, context }: EditProps 
 		}
 
 		return {
-			prev: currentIndex > 0 ? seriesData.posts[ currentIndex - 1 ] : null,
+			prev:
+				currentIndex > 0 ? seriesData.posts[ currentIndex - 1 ] : null,
 			next:
 				currentIndex < seriesData.posts.length - 1
 					? seriesData.posts[ currentIndex + 1 ]
@@ -239,7 +262,10 @@ export default function Edit( { attributes, setAttributes, context }: EditProps 
 							},
 						] }
 						onChange={ ( value: string ) =>
-							setAttributes( { arrowStyle: value as NavigationBlockAttributes[ 'arrowStyle' ] } )
+							setAttributes( {
+								arrowStyle:
+									value as NavigationBlockAttributes[ 'arrowStyle' ],
+							} )
 						}
 						__nextHasNoMarginBottom
 					/>

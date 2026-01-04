@@ -174,7 +174,7 @@ class Admin {
 		// Check for:
 		// 1. Direct taxonomy slug ('series')
 		// 2. Legacy/custom column name ('my-series' - if column was customized)
-		// 3. Prefixed taxonomy slug ('taxonomy-series')
+		// 3. Prefixed taxonomy slug ('taxonomy-series').
 		$series_column_names = array( CONTENT_SERIES_TAXONOMY, 'my-series', 'taxonomy-' . CONTENT_SERIES_TAXONOMY );
 		if ( ! in_array( $column_name, $series_column_names, true ) ) {
 			return;
@@ -216,7 +216,8 @@ class Admin {
 		}
 
 		// Verify nonce for Quick Edit.
-		if ( ! isset( $_POST['_inline_edit'] ) || ! wp_verify_nonce( $_POST['_inline_edit'], 'inlineeditnonce' ) ) {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- wp_verify_nonce() validates the nonce value.
+		if ( ! isset( $_POST['_inline_edit'] ) || ! wp_verify_nonce( wp_unslash( $_POST['_inline_edit'] ), 'inlineeditnonce' ) ) {
 			return;
 		}
 

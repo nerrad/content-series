@@ -170,8 +170,11 @@ class Admin {
 		}
 
 		// Only add fields when the series taxonomy column is being processed.
-		// The column name for taxonomies is typically the taxonomy slug, but may be prefixed.
-		// Check for both the taxonomy slug and common variations.
+		// The column name for taxonomies is typically the taxonomy slug, but may be prefixed or custom.
+		// Check for:
+		// 1. Direct taxonomy slug ('series')
+		// 2. Legacy/custom column name ('my-series' - if column was customized)
+		// 3. Prefixed taxonomy slug ('taxonomy-series')
 		$series_column_names = array( CONTENT_SERIES_TAXONOMY, 'my-series', 'taxonomy-' . CONTENT_SERIES_TAXONOMY );
 		if ( ! in_array( $column_name, $series_column_names, true ) ) {
 			return;

@@ -258,15 +258,33 @@ class Admin {
 		<script type="text/javascript">
 		(function() {
 			var restUrl = <?php echo wp_json_encode( $rest_url ); ?>;
-			var seriesCache = {}; // Cache for series data (id, name, count)
+			var seriesCache = {}; // Cache for series data (id, name)
+			var seriesCountCache = {}; // Canonical cache for total parts count per series (seriesId -> count)
+
+			// Helper function to normalize series names for comparison.
+			function normalizeSeriesName(name) {
+				if (!name) return '';
+				return name.toLowerCase().trim().replace(/\s+/g, ' ');
+			}
 
 			// Function to get series data - first from inline data, then from API if needed.
 			function getSeriesData(seriesName, callback) {
+				if (!seriesName || !seriesName.trim()) {
+					callback(null);
+					return;
+				}
+
+				var normalizedSearchName = normalizeSeriesName(seriesName);
+
 				// Check cache first.
 				var cached = Object.values(seriesCache).find(function(s) {
-					return s.name.toLowerCase() === seriesName.toLowerCase();
+					return normalizeSeriesName(s.name) === normalizedSearchName;
 				});
 				if (cached) {
+					// Ensure cached object has count from seriesCountCache.
+					if (cached.count === undefined || cached.count === null) {
+						cached.count = seriesCountCache[cached.id] !== undefined ? seriesCountCache[cached.id] : 0;
+					}
 					callback(cached);
 					return;
 				}
@@ -277,16 +295,30 @@ class Admin {
 					try {
 						var data = JSON.parse(inlineDataElements[i].getAttribute('data-series-data'));
 						var series = Object.values(data).find(function(s) {
-							return s.name.toLowerCase() === seriesName.toLowerCase();
+							return normalizeSeriesName(s.name) === normalizedSearchName;
 						});
 						if (series) {
 							// Normalize the series object (ensure it has all needed properties).
+							var seriesId = parseInt(series.id, 10);
 							var normalizedSeries = {
-								id: parseInt(series.id, 10),
-								name: series.name,
-								count: parseInt(series.count, 10) || 0
+								id: seriesId,
+								name: series.name
 							};
-							seriesCache[normalizedSeries.id] = normalizedSeries;
+							
+							// Use cached count if available, otherwise use inline data count and cache it.
+							if (seriesCountCache[seriesId] !== undefined) {
+								normalizedSeries.count = seriesCountCache[seriesId];
+							} else {
+								// Get count from inline data, defaulting to 0 if missing.
+								var count = 0;
+								if (series.count !== undefined && series.count !== null) {
+									count = parseInt(series.count, 10) || 0;
+								}
+								seriesCountCache[seriesId] = count;
+								normalizedSeries.count = count;
+							}
+							
+							seriesCache[seriesId] = normalizedSeries;
 							callback(normalizedSeries);
 							return;
 						}
@@ -296,25 +328,51 @@ class Admin {
 				}
 
 				// Not found in inline data, fetch from API.
-				fetch(restUrl + 'series?search=' + encodeURIComponent(seriesName) + '&per_page=1')
+				// Search for series by name (WordPress REST API search does partial matching).
+				var apiUrl = restUrl + 'series?search=' + encodeURIComponent(seriesName) + '&per_page=100';
+				fetch(apiUrl)
 					.then(function(response) {
+						if (!response.ok) {
+							throw new Error('API request failed: ' + response.status);
+						}
 						return response.json();
 					})
 					.then(function(data) {
-						if (data && data.length > 0) {
-							var series = {
-								id: data[0].id,
-								name: data[0].name,
-								count: data[0].count || 0
-							};
-							seriesCache[series.id] = series;
-							callback(series);
-						} else {
+						if (!data || !Array.isArray(data) || data.length === 0) {
 							callback(null);
+							return;
 						}
+						
+						// Find exact match (case-insensitive, normalized) since search can return partial matches.
+						var normalizedSearchName = normalizeSeriesName(seriesName);
+						var exactMatch = data.find(function(item) {
+							return item && item.name && normalizeSeriesName(item.name) === normalizedSearchName;
+						});
+						
+						if (!exactMatch) {
+							// No exact match found - series might not exist yet.
+							callback(null);
+							return;
+						}
+						
+						var seriesId = parseInt(exactMatch.id, 10);
+						var count = parseInt(exactMatch.count, 10) || 0;
+						
+						// API is authoritative - always use API count and update cache.
+						seriesCountCache[seriesId] = count;
+						
+						var series = {
+							id: seriesId,
+							name: exactMatch.name,
+							count: count
+						};
+						
+						// Cache and return the series.
+						seriesCache[seriesId] = series;
+						callback(series);
 					})
 					.catch(function(error) {
-						console.error('Error fetching series data:', error);
+						console.error('Error fetching series data for "' + seriesName + '":', error);
 						callback(null);
 					});
 			}
@@ -355,23 +413,28 @@ class Admin {
 
 			// Function to create a series part field.
 			function createSeriesPartField(series, currentPart) {
+				// Ensure count is defined (should always be set, but safety check).
+				var count = (series.count !== undefined && series.count !== null) ? series.count : 0;
+				
 				var field = document.createElement('div');
 				field.className = 'content-series-part-field show';
 				field.setAttribute('data-series-id', series.id);
-				field.setAttribute('data-total-parts', series.count);
+				field.setAttribute('data-total-parts', count);
 
 				var label = document.createElement('label');
 				label.innerHTML = 
 					'<span class="series-name">' + series.name + '</span>' +
 					'<span class="part-label"> - Part</span>' +
 					'<input type="number" name="series_part_' + series.id + '" value="' + currentPart + '" min="1" class="content-series-part-input" data-series-id="' + series.id + '" />' +
-					'<span class="total-parts">of ' + series.count + '</span>';
+					'<span class="total-parts">of ' + count + '</span>';
 
 				field.appendChild(label);
 				return field;
 			}
 
 			// Function to update series part fields - creates fields dynamically.
+			// Use a request counter to track the current request batch and ignore stale callbacks.
+			var updateRequestCounter = 0;
 			function updateSeriesPartFields(row, postId) {
 				if (!row) {
 					return;
@@ -391,8 +454,11 @@ class Admin {
 					return;
 				}
 
-				// Parse comma-separated term names.
-				var seriesNames = seriesTextarea.value.split(',').map(function(v) { return v.trim(); }).filter(function(v) { return v; });
+				// Parse comma-separated term names, removing empty strings and trimming.
+				// Normalize whitespace to handle multiple spaces or tabs.
+				var seriesNames = seriesTextarea.value.split(',').map(function(v) { 
+					return v.trim().replace(/\s+/g, ' ');
+				}).filter(function(v) { return v && v.length > 0; });
 				
 				if (seriesNames.length === 0) {
 					partsContainer.style.display = 'none';
@@ -400,7 +466,11 @@ class Admin {
 					return;
 				}
 
-				// Clear existing fields.
+				// Increment request counter for this batch.
+				updateRequestCounter++;
+				var currentRequest = updateRequestCounter;
+
+				// Clear existing fields immediately.
 				partsWrapper.innerHTML = '';
 
 				// Fetch series data and create fields.
@@ -410,32 +480,69 @@ class Admin {
 				// First, fetch all series data.
 				seriesNames.forEach(function(seriesName) {
 					getSeriesData(seriesName, function(series) {
+						// Ignore callbacks from stale requests.
+						if (currentRequest !== updateRequestCounter) {
+							return;
+						}
+
 						if (series) {
+							// Ensure series has required properties.
+							if (series.count === undefined || series.count === null) {
+								console.warn('Series missing count:', series);
+								series.count = seriesCountCache[series.id] || 0;
+							}
 							allSeries.push(series);
+						} else {
+							// Debug: log when series is not found.
+							console.warn('Series not found: "' + seriesName + '"');
 						}
 						pendingRequests--;
 
 						// When all series are fetched, get part numbers and create fields.
 						if (pendingRequests === 0) {
+							// Double-check this is still the current request.
+							if (currentRequest !== updateRequestCounter) {
+								return;
+							}
+
 							if (allSeries.length === 0) {
 								partsContainer.style.display = 'none';
 								return;
 							}
 
-				// Get all part numbers for this post from inline data.
-				getCurrentParts(postId, function(parts) {
-					allSeries.forEach(function(series) {
-						var currentPart = parts[series.id] || 1;
-						var field = createSeriesPartField(series, currentPart);
-						partsWrapper.appendChild(field);
-					});
+							// Clear fields again before adding new ones (in case of race condition).
+							partsWrapper.innerHTML = '';
 
-					if (allSeries.length > 0) {
-						partsContainer.style.display = '';
-					} else {
-						partsContainer.style.display = 'none';
-					}
-				});
+							// Deduplicate series by ID (in case same series appears multiple times).
+							var uniqueSeries = [];
+							var seenIds = {};
+							allSeries.forEach(function(series) {
+								if (!seenIds[series.id]) {
+									seenIds[series.id] = true;
+									uniqueSeries.push(series);
+								}
+							});
+
+							// Get all part numbers for this post from inline data.
+							getCurrentParts(postId, function(parts) {
+								// Final check for stale request.
+								if (currentRequest !== updateRequestCounter) {
+									return;
+								}
+
+								// Create fields for all unique series.
+								uniqueSeries.forEach(function(series) {
+									var currentPart = parts[series.id] || 1;
+									var field = createSeriesPartField(series, currentPart);
+									partsWrapper.appendChild(field);
+								});
+
+								if (uniqueSeries.length > 0) {
+									partsContainer.style.display = '';
+								} else {
+									partsContainer.style.display = 'none';
+								}
+							});
 						}
 					});
 				});
@@ -501,12 +608,174 @@ class Admin {
 				}
 			};
 
+			// Track series changes when Quick Edit is saved.
+			// Store the series before save to compare after save completes.
+			var seriesBeforeSave = {};
+			var wpInlineSave = inlineEditPost.save;
+			inlineEditPost.save = function(id) {
+				// Capture current series assignments before save.
+				var post_id = 0;
+				if (typeof(id) === 'object') {
+					post_id = parseInt(this.getId(id), 10);
+				} else {
+					post_id = parseInt(id, 10);
+				}
+
+				if (post_id > 0) {
+					// Get current series from inline data before save.
+					var inlineContainer = document.getElementById('inline_' + post_id);
+					if (inlineContainer) {
+						var seriesDataElement = inlineContainer.querySelector('[data-series-data]');
+						if (seriesDataElement) {
+							try {
+								var seriesData = JSON.parse(seriesDataElement.getAttribute('data-series-data'));
+								seriesBeforeSave[post_id] = Object.keys(seriesData).map(function(id) {
+									return parseInt(id, 10);
+								});
+							} catch (e) {
+								seriesBeforeSave[post_id] = [];
+							}
+						} else {
+							seriesBeforeSave[post_id] = [];
+						}
+					} else {
+						seriesBeforeSave[post_id] = [];
+					}
+				}
+
+				// Call original save function.
+				wpInlineSave.apply(this, arguments);
+
+				// Listen for AJAX completion to update counts after save.
+				var ajaxCompleteHandler = function(event, xhr, settings) {
+					// Check if this is the inline-save AJAX request.
+					if (settings.data && settings.data.indexOf('action=inline-save') !== -1) {
+						// Remove handler to prevent multiple triggers.
+						if (typeof jQuery !== 'undefined') {
+							jQuery(document).off('ajaxComplete', ajaxCompleteHandler);
+						}
+
+						// Wait a bit for DOM to update, then check for changes.
+						setTimeout(function() {
+							if (post_id > 0) {
+								updateSeriesCountsAfterSave(post_id, seriesBeforeSave[post_id] || []);
+								// Clean up.
+								delete seriesBeforeSave[post_id];
+							}
+						}, 200);
+					}
+				};
+
+				// Attach handler (using jQuery since WordPress uses it for AJAX).
+				// If jQuery is not available, we'll assume success after a delay.
+				if (typeof jQuery !== 'undefined') {
+					jQuery(document).on('ajaxComplete', ajaxCompleteHandler);
+				} else {
+					// Fallback: assume save completed successfully after a delay.
+					setTimeout(function() {
+						if (post_id > 0) {
+							updateSeriesCountsAfterSave(post_id, seriesBeforeSave[post_id] || []);
+							delete seriesBeforeSave[post_id];
+						}
+					}, 1000);
+				}
+			};
+
+			// Function to update series counts after a post is saved.
+			// Only updates when posts are added/removed from series (not when part numbers change).
+			function updateSeriesCountsAfterSave(postId, seriesBefore) {
+				// Get the new series assignments from the updated post row.
+				var postRow = document.getElementById('post-' + postId);
+				var seriesAfter = [];
+
+				// Try to get series from the updated inline data first.
+				var inlineContainer = document.getElementById('inline_' + postId);
+				if (inlineContainer) {
+					var seriesDataElement = inlineContainer.querySelector('[data-series-data]');
+					if (seriesDataElement) {
+						try {
+							var seriesData = JSON.parse(seriesDataElement.getAttribute('data-series-data'));
+							seriesAfter = Object.keys(seriesData).map(function(id) {
+								return parseInt(id, 10);
+							});
+						} catch (e) {
+							// Parse error, will try alternative method below.
+						}
+					}
+				}
+
+				// If we couldn't get series from inline data, try to get from the row's series column.
+				if (seriesAfter.length === 0 && postRow) {
+					var seriesColumn = postRow.querySelector('td.column-series, td[data-colname="Series"]');
+					if (seriesColumn) {
+						var seriesLinks = seriesColumn.querySelectorAll('a[href*="series="]');
+						seriesLinks.forEach(function(link) {
+							var href = link.getAttribute('href');
+							var match = href.match(/series=(\d+)/);
+							if (match) {
+								var seriesId = parseInt(match[1], 10);
+								if (seriesAfter.indexOf(seriesId) === -1) {
+									seriesAfter.push(seriesId);
+								}
+							}
+						});
+					}
+				}
+
+				// Find series that were added or removed (not just part number changes).
+				var addedSeries = seriesAfter.filter(function(id) {
+					return seriesBefore.indexOf(id) === -1;
+				});
+				var removedSeries = seriesBefore.filter(function(id) {
+					return seriesAfter.indexOf(id) === -1;
+				});
+
+				// If no series were added or removed, nothing to update.
+				if (addedSeries.length === 0 && removedSeries.length === 0) {
+					return;
+				}
+
+				// Update seriesCountCache for affected series.
+				addedSeries.forEach(function(seriesId) {
+					// Post was added to series - increment count.
+					if (seriesCountCache[seriesId] !== undefined) {
+						seriesCountCache[seriesId] = (seriesCountCache[seriesId] || 0) + 1;
+					} else {
+						// Not in cache yet, initialize to 1 (this post was just added).
+						seriesCountCache[seriesId] = 1;
+					}
+					
+					// Update seriesCache if it exists.
+					if (seriesCache[seriesId]) {
+						seriesCache[seriesId].count = seriesCountCache[seriesId];
+					}
+				});
+
+				removedSeries.forEach(function(seriesId) {
+					// Post was removed from series - decrement count.
+					if (seriesCountCache[seriesId] !== undefined) {
+						seriesCountCache[seriesId] = Math.max(0, (seriesCountCache[seriesId] || 0) - 1);
+					} else {
+						// Not in cache, but post was removed, so count should be at least 0.
+						seriesCountCache[seriesId] = 0;
+					}
+					
+					// Update seriesCache if it exists.
+					if (seriesCache[seriesId]) {
+						seriesCache[seriesId].count = seriesCountCache[seriesId];
+					}
+				});
+
+				// No need to update DOM elements - cache takes priority when reading.
+				// When inline data is read later, it will use the cached count value.
+			}
+
 			// Update series part fields when series selection changes.
-			// Listen for changes on the series textarea.
-			var updateTimeout;
-			document.addEventListener('input', function(event) {
+			// Listen for blur events on the series textarea (after user finishes editing/selecting from autocomplete).
+			document.addEventListener('blur', function(event) {
 				var target = event.target;
-				if (target && target.matches && target.matches('#the-list .inline-edit-row textarea.tax_input_series, #the-list .inline-edit-row textarea[name="tax_input[series]"]')) {
+				// Check if this is the series taxonomy textarea.
+				if (target && target.matches && target.matches('#the-list .inline-edit-row textarea[name="tax_input[series]"]')) {
 					var row = target.closest('.inline-edit-row');
 					if (row) {
 						var postId = 0;
@@ -514,14 +783,11 @@ class Admin {
 						if (postIdMatch) {
 							postId = parseInt(postIdMatch[1], 10);
 						}
-						// Debounce to avoid too many API calls while typing.
-						clearTimeout(updateTimeout);
-						updateTimeout = setTimeout(function() {
-							updateSeriesPartFields(row, postId);
-						}, 300);
+						// Update fields after user finishes editing and moves away from the field.
+						updateSeriesPartFields(row, postId);
 					}
 				}
-			});
+			}, true); // Use capture phase to ensure we catch the event.
 		})();
 		</script>
 		<style type="text/css">

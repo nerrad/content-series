@@ -127,11 +127,15 @@ class Content_Series {
 
 	/**
 	 * Register blocks.
+	 *
+	 * Uses register_block_type_from_metadata() which explicitly reads from block.json.
+	 * While register_block_type() works identically with a directory path, _from_metadata()
+	 * is more semantically clear about the registration method.
 	 */
 	public function register_blocks() {
 		// Series Post List block.
 		if ( ! \WP_Block_Type_Registry::get_instance()->is_registered( 'content-series/post-list' ) ) {
-			register_block_type(
+			register_block_type_from_metadata(
 				CONTENT_SERIES_PATH . 'build/blocks/series-post-list',
 				array(
 					'render_callback' => array( $this, 'render_series_post_list' ),
@@ -141,7 +145,7 @@ class Content_Series {
 
 		// Series Navigation block.
 		if ( ! \WP_Block_Type_Registry::get_instance()->is_registered( 'content-series/navigation' ) ) {
-			register_block_type(
+			register_block_type_from_metadata(
 				CONTENT_SERIES_PATH . 'build/blocks/series-navigation',
 				array(
 					'render_callback' => array( $this, 'render_series_navigation' ),

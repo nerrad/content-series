@@ -109,7 +109,7 @@ registerBlockVariation( 'core/terms-query', {
 			inherit: false,
 		},
 	},
-	isActive: function ( blockAttributes: any ) {
+	isActive( blockAttributes: any ) {
 		return (
 			blockAttributes.termQuery &&
 			blockAttributes.termQuery.taxonomy === 'series'
@@ -118,4 +118,3 @@ registerBlockVariation( 'core/terms-query', {
 	innerBlocks: getInnerBlocks(),
 	scope: [ 'inserter', 'block' ],
 } );
-

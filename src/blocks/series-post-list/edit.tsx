@@ -15,7 +15,12 @@ import { store as coreStore } from '@wordpress/core-data';
 import apiFetch from '@wordpress/api-fetch';
 import { useState, useEffect } from '@wordpress/element';
 
-import type { BlockAttributes, BlockContext, SeriesData, WPPost } from '../../types';
+import type {
+	BlockAttributes,
+	BlockContext,
+	SeriesData,
+	WPPost,
+} from '../../types';
 
 interface EditProps {
 	attributes: BlockAttributes;
@@ -23,7 +28,11 @@ interface EditProps {
 	context: BlockContext;
 }
 
-export default function Edit( { attributes, setAttributes, context }: EditProps ): JSX.Element {
+export default function Edit( {
+	attributes,
+	setAttributes,
+	context,
+}: EditProps ): JSX.Element {
 	const {
 		showNumbers,
 		showShortTitle,
@@ -45,10 +54,18 @@ export default function Edit( { attributes, setAttributes, context }: EditProps 
 			}
 
 			const coreSelectors = select( coreStore ) as {
-				getEntityRecord: ( kind: string, name: string, id: number ) => WPPost | undefined;
+				getEntityRecord: (
+					kind: string,
+					name: string,
+					id: number
+				) => WPPost | undefined;
 			};
 
-			const post = coreSelectors.getEntityRecord( 'postType', 'post', postId );
+			const post = coreSelectors.getEntityRecord(
+				'postType',
+				'post',
+				postId
+			);
 
 			if ( ! post || ! post.series || post.series.length === 0 ) {
 				return { series: [] };
@@ -202,13 +219,14 @@ export default function Edit( { attributes, setAttributes, context }: EditProps 
 			<div { ...blockProps }>
 				{ showSeriesTitle && (
 					<div className="wp-block-content-series-post-list__header">
-						{ showSeriesIcon && seriesData.series.meta?.series_icon && (
-							<img
-								src={ seriesData.series.meta.series_icon }
-								alt=""
-								className="wp-block-content-series-post-list__icon"
-							/>
-						) }
+						{ showSeriesIcon &&
+							seriesData.series.meta?.series_icon && (
+								<img
+									src={ seriesData.series.meta.series_icon }
+									alt=""
+									className="wp-block-content-series-post-list__icon"
+								/>
+							) }
 						<h3 className="wp-block-content-series-post-list__title">
 							{ seriesData.series.name }
 						</h3>
@@ -218,9 +236,10 @@ export default function Edit( { attributes, setAttributes, context }: EditProps 
 				<ListTag className="wp-block-content-series-post-list__items">
 					{ seriesData.posts.map( ( post ) => {
 						const isCurrent = post.id === postId;
-						const title = showShortTitle && post.short_title
-							? post.short_title
-							: post.title;
+						const title =
+							showShortTitle && post.short_title
+								? post.short_title
+								: post.title;
 
 						return (
 							<li

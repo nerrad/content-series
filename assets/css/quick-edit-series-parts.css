@@ -1,3 +1,10 @@
+/**
+ * Quick Edit Series Parts Styles
+ *
+ * Browser compatibility: Uses :has() selector (supported in modern browsers).
+ * WordPress 6.8+ targets modern browsers, so this is acceptable.
+ * Fallback: Styling simply won't apply in older browsers (graceful degradation).
+ */
 .inline-edit-tags-wrap:has(#inline-edit-series-desc) {
 	background-color: #f0f0f1;
 	border-radius: 3px;
@@ -14,6 +21,7 @@
 	margin-bottom: 8px;
 	display: none;
 }
+/* !important needed to override inline display:none set by JavaScript */
 .content-series-part-field.show {
 	display: block !important;
 }

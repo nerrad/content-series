@@ -538,9 +538,16 @@ class Admin {
 
 								// Create fields for all unique series.
 								uniqueSeries.forEach(function(series) {
-									var currentPart = parts[series.id] || 1;
 									// Check if this post is being newly added to the series (not in parts means it's new).
 									var isNewAddition = !parts[series.id];
+									var currentPart;
+									if (isNewAddition) {
+										// When adding to a new series, default to the total parts it will become.
+										currentPart = (series.count || 0) + 1;
+									} else {
+										// Use existing part number.
+										currentPart = parts[series.id] || 1;
+									}
 									var field = createSeriesPartField(series, currentPart, isNewAddition);
 									partsWrapper.appendChild(field);
 								});

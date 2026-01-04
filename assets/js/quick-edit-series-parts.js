@@ -1,4 +1,18 @@
+/**
+ * Quick Edit Series Parts
+ *
+ * Adds series part number editing to WordPress Quick Edit interface.
+ * Uses IIFE to avoid polluting global scope.
+ *
+ * Global dependency: contentSeriesQuickEditData (provided via wp_add_inline_script)
+ */
 (function() {
+	// Timeout constants (in milliseconds).
+	var DOM_UPDATE_DELAY = 200;        // Wait for WordPress to update DOM after save
+	var AJAX_CLEANUP_TIMEOUT = 10000;  // Force remove AJAX handler after 10 seconds
+	var FALLBACK_SAVE_DELAY = 1000;    // Assume save completed if jQuery unavailable
+
+	// Get REST URL from inline script data (global provided by WordPress).
 	var restUrl = contentSeriesQuickEditData.restUrl;
 	var seriesCache = {}; // Cache for series data (id, name)
 	var seriesCountCache = {}; // Canonical cache for total parts count per series (seriesId -> count)
@@ -65,7 +79,8 @@
 					return;
 				}
 			} catch (e) {
-				// Ignore parse errors.
+				// JSON parse error - inline data may be malformed.
+				console.warn('Failed to parse inline series data:', e);
 			}
 		}
 
@@ -412,6 +427,8 @@
 							return parseInt(id, 10);
 						});
 					} catch (e) {
+					// JSON parse error - inline data may be malformed.
+					console.warn('Failed to parse series data before save for post ' + post_id + ':', e);
 						seriesBeforeSave[post_id] = [];
 					}
 				} else {
@@ -440,14 +457,13 @@
 				}
 
 				// Wait for DOM to update (WordPress updates the row asynchronously).
-				// 200ms timeout allows WordPress to update the inline data before we read it.
 				setTimeout(function() {
 					if (post_id > 0) {
 						updateSeriesCountsAfterSave(post_id, seriesBeforeSave[post_id] || []);
 						// Clean up.
 						delete seriesBeforeSave[post_id];
 					}
-				}, 200);
+				}, DOM_UPDATE_DELAY);
 			}
 		};
 
@@ -463,7 +479,7 @@
 				if (post_id > 0 && seriesBeforeSave[post_id]) {
 					delete seriesBeforeSave[post_id];
 				}
-			}, 10000); // 10 second timeout
+			}, AJAX_CLEANUP_TIMEOUT);
 		} else {
 			// Fallback: assume save completed successfully after a delay.
 			setTimeout(function() {
@@ -471,7 +487,7 @@
 					updateSeriesCountsAfterSave(post_id, seriesBeforeSave[post_id] || []);
 					delete seriesBeforeSave[post_id];
 				}
-			}, 1000);
+			}, FALLBACK_SAVE_DELAY);
 		}
 	};
 
@@ -494,6 +510,7 @@
 					});
 				} catch (e) {
 					// Parse error, will try alternative method below.
+					console.warn('Failed to parse series data after save, will try alternative method:', e);
 				}
 			}
 		}

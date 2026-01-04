@@ -50,7 +50,9 @@ jobs:
 
             Use the repository's CLAUDE.md for guidance on style and conventions. Be constructive and helpful in your feedback.
 
-            Use inline comments to highlight specific areas of concern and fall back to the `gh pr comment` tool via bash if the relevant mcp tool is not available.
+            USE INLINE COMMENTS TO HIGHLIGHT SPECIFIC AREAS OF CONCERN.
+            
+            Only fall back to the `gh pr comment` tool via bash if the relevant mcp tool is not available. Otherwise, use this tool to summarize the inline comments that were made.
 
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options

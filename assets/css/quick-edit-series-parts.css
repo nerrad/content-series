@@ -1,0 +1,44 @@
+.inline-edit-tags-wrap:has(#inline-edit-series-desc) {
+	background-color: #f0f0f1;
+	border-radius: 3px;
+	padding: 10px;
+	margin-top: 5px;
+}
+.content-series-parts-container {
+	margin-top: 10px;
+}
+.content-series-quick-edit-parts {
+	margin-left: 0;
+}
+.content-series-part-field {
+	margin-bottom: 8px;
+	display: none;
+}
+.content-series-part-field.show {
+	display: block !important;
+}
+.content-series-part-field:last-child {
+	margin-bottom: 0;
+}
+.content-series-part-field label {
+	display: block;
+	margin-bottom: 4px;
+	font-weight: normal;
+}
+.content-series-part-field .series-name {
+	display: inline-block;
+	font-weight: 600;
+	margin-right: 4px;
+}
+.content-series-part-field .part-label {
+	display: inline-block;
+	margin-right: 4px;
+}
+.content-series-part-field input[type="number"] {
+	width: 60px;
+	margin: 0 4px;
+}
+.content-series-part-field .total-parts {
+	display: inline-block;
+	margin-left: 4px;
+}

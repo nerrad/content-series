@@ -71,6 +71,9 @@
 
 		// Not found in inline data, fetch from API.
 		// Search for series by name (WordPress REST API search does partial matching).
+		// Note: Limited to 100 results (WordPress REST API default maximum).
+		// Sites with 100+ series may not find all matches. To increase, add a filter:
+		// add_filter( 'rest_series_query', function($args) { $args['number'] = 500; return $args; } );
 		var apiUrl = restUrl + 'series?search=' + encodeURIComponent(seriesName) + '&per_page=100';
 		fetch(apiUrl)
 			.then(function(response) {
@@ -431,7 +434,13 @@
 					jQuery(document).off('ajaxComplete', ajaxCompleteHandler);
 				}
 
-				// Wait a bit for DOM to update, then check for changes.
+				// Clear the cleanup timeout since handler fired successfully.
+				if (cleanupTimeoutId) {
+					clearTimeout(cleanupTimeoutId);
+				}
+
+				// Wait for DOM to update (WordPress updates the row asynchronously).
+				// 200ms timeout allows WordPress to update the inline data before we read it.
 				setTimeout(function() {
 					if (post_id > 0) {
 						updateSeriesCountsAfterSave(post_id, seriesBeforeSave[post_id] || []);
@@ -446,6 +455,15 @@
 		// If jQuery is not available, we'll assume success after a delay.
 		if (typeof jQuery !== 'undefined') {
 			jQuery(document).on('ajaxComplete', ajaxCompleteHandler);
+
+			// Add timeout to forcibly remove handler if AJAX never completes (prevents memory leak).
+			var cleanupTimeoutId = setTimeout(function() {
+				jQuery(document).off('ajaxComplete', ajaxCompleteHandler);
+				// Clean up tracking data.
+				if (post_id > 0 && seriesBeforeSave[post_id]) {
+					delete seriesBeforeSave[post_id];
+				}
+			}, 10000); // 10 second timeout
 		} else {
 			// Fallback: assume save completed successfully after a delay.
 			setTimeout(function() {
@@ -528,17 +546,16 @@
 		});
 
 		removedSeries.forEach(function(seriesId) {
-			// Post was removed from series - decrement count.
+			// Post was removed from series - decrement count if cached.
+			// If not cached, we can't know the correct count, so don't add stale data.
+			// Next access will fetch fresh data from API or inline data.
 			if (seriesCountCache[seriesId] !== undefined) {
 				seriesCountCache[seriesId] = Math.max(0, (seriesCountCache[seriesId] || 0) - 1);
-			} else {
-				// Not in cache, but post was removed, so count should be at least 0.
-				seriesCountCache[seriesId] = 0;
-			}
-			
-			// Update seriesCache if it exists.
-			if (seriesCache[seriesId]) {
-				seriesCache[seriesId].count = seriesCountCache[seriesId];
+
+				// Update seriesCache if it exists.
+				if (seriesCache[seriesId]) {
+					seriesCache[seriesId].count = seriesCountCache[seriesId];
+				}
 			}
 		});
 

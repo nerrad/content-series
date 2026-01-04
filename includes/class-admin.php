@@ -217,27 +217,38 @@ class Admin {
 			return;
 		}
 
-		// Get all series terms to check which parts were submitted.
-		$series_terms = get_terms(
-			array(
-				'taxonomy'   => CONTENT_SERIES_TAXONOMY,
-				'hide_empty' => false,
-			)
-		);
+		// Parse POST data to find which series IDs have submitted part values.
+		$series_ids_with_data = array();
+		foreach ( $_POST as $key => $value ) {
+			if ( strpos( $key, 'series_part_' ) === 0 ) {
+				$series_id = absint( str_replace( 'series_part_', '', $key ) );
+				if ( $series_id > 0 ) {
+					$series_ids_with_data[ $series_id ] = $value;
+				}
+			}
+		}
 
-		if ( empty( $series_terms ) || is_wp_error( $series_terms ) ) {
+		// Early return if no series part data submitted.
+		if ( empty( $series_ids_with_data ) ) {
 			return;
 		}
 
-		// Save series part values.
-		foreach ( $series_terms as $term ) {
-			$input_name = 'series_part_' . $term->term_id;
-			if ( isset( $_POST[ $input_name ] ) ) {
-				$part_value = sanitize_text_field( wp_unslash( $_POST[ $input_name ] ) );
+		// Get series terms assigned to this post.
+		$assigned_series = get_the_terms( $post_id, CONTENT_SERIES_TAXONOMY );
+		if ( empty( $assigned_series ) || is_wp_error( $assigned_series ) ) {
+			return;
+		}
+
+		$assigned_ids = wp_list_pluck( $assigned_series, 'term_id' );
+
+		// Save part values only for series the post is actually assigned to.
+		foreach ( $assigned_ids as $series_id ) {
+			if ( isset( $series_ids_with_data[ $series_id ] ) ) {
+				$part_value = sanitize_text_field( wp_unslash( $series_ids_with_data[ $series_id ] ) );
 				$part_value = absint( $part_value );
 				// Only update if value is valid (>= 1).
 				if ( $part_value >= 1 ) {
-					Post_Meta::set_post_series_part( $post_id, $term->term_id, $part_value );
+					Post_Meta::set_post_series_part( $post_id, $series_id, $part_value );
 				}
 			}
 		}

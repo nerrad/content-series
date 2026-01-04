@@ -14,16 +14,39 @@
 
 	// Get REST URL from inline script data (global provided by WordPress).
 	var restUrl = contentSeriesQuickEditData.restUrl;
-	var seriesCache = {}; // Cache for series data (id, name)
-	var seriesCountCache = {}; // Canonical cache for total parts count per series (seriesId -> count)
 
-	// Helper function to normalize series names for comparison.
+	/**
+	 * Cache Strategy:
+	 * - seriesCache: Stores series objects by ID {id, name, count}
+	 * - seriesCountCache: Canonical source for total parts count (seriesId -> count)
+	 * - Priority: seriesCountCache > API count > inline data count
+	 * - Updates: Incremented/decremented when posts added/removed from series
+	 */
+	var seriesCache = {};
+	var seriesCountCache = {};
+
+	/**
+	 * Normalize series name for case-insensitive comparison.
+	 *
+	 * @param {string} name - Series name to normalize
+	 * @return {string} Normalized name (lowercase, trimmed, single spaces)
+	 */
 	function normalizeSeriesName(name) {
 		if (!name) return '';
 		return name.toLowerCase().trim().replace(/\s+/g, ' ');
 	}
 
-	// Function to get series data - first from inline data, then from API if needed.
+	/**
+	 * Get series data by name.
+	 *
+	 * Lookup order:
+	 * 1. Check seriesCache
+	 * 2. Check inline data (DOM elements with data-series-data attribute)
+	 * 3. Fetch from REST API if not found
+	 *
+	 * @param {string} seriesName - Name of series to lookup
+	 * @param {Function} callback - Called with series object {id, name, count} or null
+	 */
 	function getSeriesData(seriesName, callback) {
 		if (!seriesName || !seriesName.trim()) {
 			callback(null);
@@ -137,7 +160,15 @@
 			});
 	}
 
-	// Function to get current part numbers for a post from inline data.
+	/**
+	 * Get current part numbers for a post from inline data.
+	 *
+	 * Reads series part data from the inline container element
+	 * (added by WordPress via add_inline_data hook).
+	 *
+	 * @param {number} postId - Post ID
+	 * @param {Function} callback - Called with object mapping seriesId -> partNumber
+	 */
 	function getCurrentParts(postId, callback) {
 		if (!postId) {
 			callback({});
@@ -171,7 +202,23 @@
 		}
 	}
 
-	// Function to create a series part field.
+	/**
+	 * Create a series part input field element.
+	 *
+	 * Creates DOM structure:
+	 * <div class="content-series-part-field show">
+	 *   <label>
+	 *     <span class="series-name">{name}</span> - Part
+	 *     <input type="number" name="series_part_{id}" value="{part}" />
+	 *     of {count} ( -> {preview} )
+	 *   </label>
+	 * </div>
+	 *
+	 * @param {Object} series - Series object {id, name, count}
+	 * @param {number} currentPart - Current part number for this post
+	 * @param {boolean} isNewAddition - Whether post is newly added to this series
+	 * @return {HTMLElement} The field element
+	 */
 	function createSeriesPartField(series, currentPart, isNewAddition) {
 		// Ensure count is defined (should always be set, but safety check).
 		var count = (series.count !== undefined && series.count !== null) ? series.count : 0;
@@ -217,7 +264,21 @@
 		return field;
 	}
 
-	// Function to update series part fields - creates fields dynamically.
+	/**
+	 * Update series part fields dynamically for a Quick Edit row.
+	 *
+	 * Event flow:
+	 * 1. Parse series names from textarea (comma or newline separated)
+	 * 2. For each series, fetch data via getSeriesData()
+	 * 3. Get current part numbers via getCurrentParts()
+	 * 4. Create field for each series via createSeriesPartField()
+	 * 5. Append fields to container and show/hide as needed
+	 *
+	 * Request counter prevents stale callbacks from overwriting newer requests.
+	 *
+	 * @param {HTMLElement} row - Quick Edit table row element
+	 * @param {number} postId - Post ID being edited
+	 */
 	// Use a request counter to track the current request batch and ignore stale callbacks.
 	var updateRequestCounter = 0;
 	function updateSeriesPartFields(row, postId) {
@@ -382,7 +443,15 @@
 	}
 
 
-	// Extend inlineEditPost.edit to populate series part fields.
+	/**
+	 * WordPress Quick Edit Integration
+	 *
+	 * Extends WordPress's inlineEditPost object to add series parts functionality:
+	 * - inlineEditPost.edit: Called when Quick Edit opens - populates part fields
+	 * - inlineEditPost.save: Called when Save button clicked - tracks changes for cache updates
+	 */
+
+	// Extend inlineEditPost.edit to populate series part fields when Quick Edit opens.
 	var wpInlineEdit = inlineEditPost.edit;
 	inlineEditPost.edit = function(id) {
 		wpInlineEdit.apply(this, arguments);
@@ -491,8 +560,18 @@
 		}
 	};
 
-	// Function to update series counts after a post is saved.
-	// Only updates when posts are added/removed from series (not when part numbers change).
+	/**
+	 * Update series counts in cache after a post is saved.
+	 *
+	 * Compares series assignments before/after save to detect additions/removals.
+	 * Updates seriesCountCache by incrementing for additions, decrementing for removals.
+	 * Only modifies cache - doesn't update DOM (cache takes priority on next read).
+	 *
+	 * Note: Only updates when posts are added/removed from series, not for part number changes.
+	 *
+	 * @param {number} postId - Post ID that was saved
+	 * @param {Array<number>} seriesBefore - Array of series IDs before save
+	 */
 	function updateSeriesCountsAfterSave(postId, seriesBefore) {
 		// Get the new series assignments from the updated post row.
 		var postRow = document.getElementById('post-' + postId);

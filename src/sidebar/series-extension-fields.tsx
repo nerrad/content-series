@@ -10,7 +10,7 @@ import { store as coreStore } from '@wordpress/core-data';
 import { store as editorStore } from '@wordpress/editor';
 import { __ } from '@wordpress/i18n';
 import { TextControl, Spinner } from '@wordpress/components';
-import { useMemo } from '@wordpress/element';
+import { useMemo, useEffect } from '@wordpress/element';
 
 import type { SeriesOrder, WPTerm } from '../types';
 
@@ -26,6 +26,8 @@ interface EditorSelectReturn {
 	shortTitle: string;
 	seriesOrder: SeriesOrder;
 	isSaving: boolean;
+	postType: string;
+	canAssignTerms: boolean;
 }
 
 interface CoreSelectReturn {
@@ -39,38 +41,52 @@ export default function SeriesExtensionFields(): JSX.Element | null {
 	};
 
 	// Get post data from editor store
-	const { currentSeriesIds, shortTitle, seriesOrder, isSaving } = useSelect(
-		( select ): EditorSelectReturn => {
-			const editorSelectors = select( editorStore ) as {
-				getEditedPostAttribute: ( attr: string ) => unknown;
-				isSavingPost: () => boolean;
+	const {
+		currentSeriesIds,
+		shortTitle,
+		seriesOrder,
+		isSaving,
+		postType,
+		canAssignTerms,
+	} = useSelect( ( select ): EditorSelectReturn => {
+		const editorSelectors = select( editorStore ) as {
+			getEditedPostAttribute: ( attr: string ) => unknown;
+			isSavingPost: () => boolean;
+			getCurrentPostType: () => string;
+			getCurrentPost: () => {
+				_links?: Record< string, unknown >;
 			};
+		};
 
-			const meta = editorSelectors.getEditedPostAttribute( 'meta' ) as
-				| Record< string, unknown >
-				| undefined;
+		const meta = editorSelectors.getEditedPostAttribute( 'meta' ) as
+			| Record< string, unknown >
+			| undefined;
 
-			const rawIds = editorSelectors.getEditedPostAttribute(
-				TAXONOMY
-			) as number[] | undefined;
+		const rawIds = editorSelectors.getEditedPostAttribute( TAXONOMY ) as
+			| number[]
+			| undefined;
 
-			const rawOrder = editorSelectors.getEditedPostAttribute(
-				'series_order'
-			) as SeriesOrder | undefined;
+		const rawOrder = editorSelectors.getEditedPostAttribute(
+			'series_order'
+		) as SeriesOrder | undefined;
 
-			return {
-				currentSeriesIds:
-					rawIds && rawIds.length > 0 ? rawIds : EMPTY_IDS,
-				shortTitle: ( meta?._spost_short_title as string ) || '',
-				seriesOrder:
-					rawOrder && Object.keys( rawOrder ).length > 0
-						? rawOrder
-						: EMPTY_ORDER,
-				isSaving: editorSelectors.isSavingPost(),
-			};
-		},
-		[]
-	);
+		const currentPost = editorSelectors.getCurrentPost();
+		const hasAssignLink = Boolean(
+			currentPost?._links?.[ 'wp:action-assign-series' ]
+		);
+
+		return {
+			currentSeriesIds: rawIds && rawIds.length > 0 ? rawIds : EMPTY_IDS,
+			shortTitle: ( meta?._spost_short_title as string ) || '',
+			seriesOrder:
+				rawOrder && Object.keys( rawOrder ).length > 0
+					? rawOrder
+					: EMPTY_ORDER,
+			isSaving: editorSelectors.isSavingPost(),
+			postType: editorSelectors.getCurrentPostType(),
+			canAssignTerms: hasAssignLink,
+		};
+	}, [] );
 
 	// Build query for current series terms
 	const currentSeriesQuery = useMemo(
@@ -124,6 +140,20 @@ export default function SeriesExtensionFields(): JSX.Element | null {
 		[ currentSeriesQuery ]
 	);
 
+	// Initialize series_order for newly selected series that don't have an order yet
+	useEffect( () => {
+		const missingIds = currentSeriesIds.filter(
+			( id ) => ! ( id in seriesOrder )
+		);
+		if ( missingIds.length > 0 ) {
+			const newOrder = { ...seriesOrder };
+			missingIds.forEach( ( id ) => {
+				newOrder[ id ] = 1;
+			} );
+			editPost( { series_order: newOrder } );
+		}
+	}, [ currentSeriesIds, seriesOrder, editPost ] );
+
 	// Handle order change for a specific series
 	const handleOrderChange = ( seriesId: number, newOrder: string ): void => {
 		const newSeriesOrder: SeriesOrder = {
@@ -139,6 +169,16 @@ export default function SeriesExtensionFields(): JSX.Element | null {
 			meta: { _spost_short_title: value },
 		} );
 	};
+
+	// Only render for posts
+	if ( postType !== 'post' ) {
+		return null;
+	}
+
+	// Don't render if user can't assign series terms
+	if ( ! canAssignTerms ) {
+		return null;
+	}
 
 	// Don't render anything if no series are selected
 	if ( currentSeriesIds.length === 0 ) {

@@ -34,3 +34,18 @@
 		width: 80px;
 	}
 }
+
+.content-series-extension {
+	margin-top: 1rem;
+
+	&__heading {
+		margin: 0 0 0.5rem;
+		font-size: 11px;
+		text-transform: uppercase;
+		color: #757575;
+	}
+
+	.components-text-control__input[type="number"] {
+		width: 80px;
+	}
+}

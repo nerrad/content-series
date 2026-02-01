@@ -1,56 +1,56 @@
 {
-  "$schema": "https://schemas.wp.org/trunk/block.json",
-  "apiVersion": 3,
-  "name": "content-series/post-list",
-  "version": "1.0.0",
-  "title": "Series Post List",
-  "category": "theme",
-  "description": "Displays a list of posts in the current series.",
-  "textdomain": "content-series",
-  "attributes": {
-    "showNumbers": {
-      "type": "boolean",
-      "default": true
-    },
-    "showShortTitle": {
-      "type": "boolean",
-      "default": false
-    },
-    "highlightCurrent": {
-      "type": "boolean",
-      "default": true
-    },
-    "showSeriesTitle": {
-      "type": "boolean",
-      "default": true
-    },
-    "showSeriesIcon": {
-      "type": "boolean",
-      "default": true
-    },
-    "context": {
-      "type": "string",
-      "default": "single"
-    }
-  },
-  "usesContext": ["postId", "postType"],
-  "supports": {
-    "html": false,
-    "color": {
-      "link": true,
-      "text": true,
-      "background": true
-    },
-    "typography": {
-      "fontSize": true,
-      "lineHeight": true
-    },
-    "spacing": {
-      "margin": true,
-      "padding": true
-    }
-  },
-  "editorScript": "file:./index.js",
-  "editorStyle": "file:./index.css",
-  "style": "file:./style-index.css"
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "content-series/post-list",
+	"version": "1.0.0",
+	"title": "Series Post List",
+	"category": "theme",
+	"description": "Displays a list of posts in the current series.",
+	"textdomain": "content-series",
+	"attributes": {
+		"showNumbers": {
+			"type": "boolean",
+			"default": true
+		},
+		"showShortTitle": {
+			"type": "boolean",
+			"default": false
+		},
+		"highlightCurrent": {
+			"type": "boolean",
+			"default": true
+		},
+		"showSeriesTitle": {
+			"type": "boolean",
+			"default": true
+		},
+		"showSeriesIcon": {
+			"type": "boolean",
+			"default": true
+		},
+		"context": {
+			"type": "string",
+			"default": "single"
+		}
+	},
+	"usesContext": [ "postId", "postType" ],
+	"supports": {
+		"html": false,
+		"color": {
+			"link": true,
+			"text": true,
+			"background": true
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css"
 }

@@ -24,6 +24,11 @@ import type { SeriesOrder, WPTerm } from '../types';
 
 const TAXONOMY = 'series';
 
+// Stable empty references to avoid new array/object creation on each render
+const EMPTY_TERMS: WPTerm[] = [];
+const EMPTY_IDS: number[] = [];
+const EMPTY_ORDER: SeriesOrder = {};
+
 // TokenItem interface from FormTokenField
 interface TokenItem {
 	value: string;
@@ -34,7 +39,6 @@ interface TokenItem {
 
 interface EditorSelectReturn {
 	postType: string | undefined;
-	postId: number | undefined;
 	currentSeriesIds: number[];
 	shortTitle: string;
 	seriesOrder: SeriesOrder;
@@ -52,61 +56,7 @@ export default function SeriesPanel(): JSX.Element | null {
 	const [ search, setSearch ] = useState< string >( '' );
 	const [ isCreating, setIsCreating ] = useState< boolean >( false );
 
-	// Get post data
-	const {
-		postType,
-		postId,
-		currentSeriesIds,
-		shortTitle,
-		seriesOrder,
-		isSaving,
-	} = useSelect( ( select ): EditorSelectReturn => {
-		const editorSelectors = select( editorStore ) as {
-			getCurrentPostType: () => string | undefined;
-			getCurrentPostId: () => number | undefined;
-			getEditedPostAttribute: ( attr: string ) => unknown;
-			isSavingPost: () => boolean;
-		};
-
-		const type = editorSelectors.getCurrentPostType();
-
-		// Only support posts
-		if ( type !== 'post' ) {
-			return {
-				postType: type,
-				postId: undefined,
-				currentSeriesIds: [],
-				shortTitle: '',
-				seriesOrder: {},
-				isSaving: false,
-			};
-		}
-
-		const meta = editorSelectors.getEditedPostAttribute( 'meta' ) as
-			| Record< string, unknown >
-			| undefined;
-
-		return {
-			postType: type,
-			postId: editorSelectors.getCurrentPostId(),
-			currentSeriesIds:
-				( editorSelectors.getEditedPostAttribute(
-					TAXONOMY
-				) as number[] ) || [],
-			shortTitle: ( meta?._spost_short_title as string ) || '',
-			seriesOrder:
-				( editorSelectors.getEditedPostAttribute(
-					'series_order'
-				) as SeriesOrder ) || {},
-			isSaving: editorSelectors.isSavingPost(),
-		};
-	}, [] );
-
-	// Don't render for non-post types
-	if ( postType !== 'post' ) {
-		return null;
-	}
-
+	// ALL useDispatch calls first (must be before any conditional returns)
 	const { editPost } = useDispatch( editorStore ) as {
 		editPost: ( edits: Record< string, unknown > ) => void;
 	};
@@ -119,74 +69,147 @@ export default function SeriesPanel(): JSX.Element | null {
 		) => Promise< WPTerm >;
 	};
 
-	// Search for series
+	// useDebounce (must be before any conditional returns)
 	const debouncedSearch = useDebounce( setSearch, 300 );
 
-	// Get all series and search results
-	const { allSeries, searchResults, currentSeriesTerms, isLoading } =
-		useSelect(
-			( select ): CoreSelectReturn => {
-				const coreSelectors = select( coreStore ) as {
-					getEntityRecords: (
-						kind: string,
-						name: string,
-						query?: Record< string, unknown >
-					) => WPTerm[] | null;
-					isResolving: (
-						selectorName: string,
-						args: unknown[]
-					) => boolean;
-				};
+	// Get post data
+	const { postType, currentSeriesIds, shortTitle, seriesOrder, isSaving } =
+		useSelect( ( select ): EditorSelectReturn => {
+			const editorSelectors = select( editorStore ) as {
+				getCurrentPostType: () => string | undefined;
+				getEditedPostAttribute: ( attr: string ) => unknown;
+				isSavingPost: () => boolean;
+			};
 
-				// Get all series for suggestions
-				const all =
-					coreSelectors.getEntityRecords( 'taxonomy', TAXONOMY, {
-						per_page: 100,
-						orderby: 'name',
-						order: 'asc',
-					} ) || [];
+			const type = editorSelectors.getCurrentPostType();
 
-				// Get search results if searching
-				const results = search
-					? coreSelectors.getEntityRecords( 'taxonomy', TAXONOMY, {
-							search,
-							per_page: 20,
-					  } ) || []
-					: [];
-
-				// Get current series terms
-				const current =
-					currentSeriesIds.length > 0
-						? coreSelectors.getEntityRecords(
-								'taxonomy',
-								TAXONOMY,
-								{
-									include: currentSeriesIds,
-									per_page: 100,
-								}
-						  ) || []
-						: [];
-
+			// Only support posts - return stable empty references for non-posts
+			if ( type !== 'post' ) {
 				return {
-					allSeries: all,
-					searchResults: results,
-					currentSeriesTerms: current,
-					isLoading:
+					postType: type,
+					currentSeriesIds: EMPTY_IDS,
+					shortTitle: '',
+					seriesOrder: EMPTY_ORDER,
+					isSaving: false,
+				};
+			}
+
+			const meta = editorSelectors.getEditedPostAttribute( 'meta' ) as
+				| Record< string, unknown >
+				| undefined;
+
+			return {
+				postType: type,
+				currentSeriesIds:
+					( editorSelectors.getEditedPostAttribute(
+						TAXONOMY
+					) as number[] ) || EMPTY_IDS,
+				shortTitle: ( meta?._spost_short_title as string ) || '',
+				seriesOrder:
+					( editorSelectors.getEditedPostAttribute(
+						'series_order'
+					) as SeriesOrder ) || EMPTY_ORDER,
+				isSaving: editorSelectors.isSavingPost(),
+			};
+		}, [] );
+
+	// Get all series and search results (must be before conditional return)
+	// Returns raw data that will be stabilized with useMemo below
+	const rawSeriesData = useSelect(
+		( select ): CoreSelectReturn => {
+			// Return empty data for non-post types
+			if ( postType !== 'post' ) {
+				return {
+					allSeries: EMPTY_TERMS,
+					searchResults: EMPTY_TERMS,
+					currentSeriesTerms: EMPTY_TERMS,
+					isLoading: false,
+				};
+			}
+
+			const coreSelectors = select( coreStore ) as {
+				getEntityRecords: (
+					kind: string,
+					name: string,
+					query?: Record< string, unknown >
+				) => WPTerm[] | null;
+				isResolving: (
+					selectorName: string,
+					args: unknown[]
+				) => boolean;
+			};
+
+			// Get all series for suggestions
+			const all =
+				coreSelectors.getEntityRecords( 'taxonomy', TAXONOMY, {
+					per_page: 100,
+					orderby: 'name',
+					order: 'asc',
+				} ) || EMPTY_TERMS;
+
+			// Get search results if searching
+			const results = search
+				? coreSelectors.getEntityRecords( 'taxonomy', TAXONOMY, {
+						search,
+						per_page: 20,
+				  } ) || EMPTY_TERMS
+				: EMPTY_TERMS;
+
+			// Get current series terms
+			const current =
+				currentSeriesIds.length > 0
+					? coreSelectors.getEntityRecords( 'taxonomy', TAXONOMY, {
+							include: currentSeriesIds,
+							per_page: 100,
+					  } ) || EMPTY_TERMS
+					: EMPTY_TERMS;
+
+			return {
+				allSeries: all,
+				searchResults: results,
+				currentSeriesTerms: current,
+				isLoading:
+					coreSelectors.isResolving( 'getEntityRecords', [
+						'taxonomy',
+						TAXONOMY,
+						{ per_page: 100 },
+					] ) ||
+					( currentSeriesIds.length > 0 &&
 						coreSelectors.isResolving( 'getEntityRecords', [
 							'taxonomy',
 							TAXONOMY,
-							{ per_page: 100 },
-						] ) ||
-						( currentSeriesIds.length > 0 &&
-							coreSelectors.isResolving( 'getEntityRecords', [
-								'taxonomy',
-								TAXONOMY,
-								{ include: currentSeriesIds },
-							] ) ),
-				};
-			},
-			[ search, currentSeriesIds ]
-		);
+							{ include: currentSeriesIds },
+						] ) ),
+			};
+		},
+		[ postType, search, currentSeriesIds ]
+	);
+
+	// Stabilize array references - only update when IDs change
+	const allSeries = useMemo(
+		() => rawSeriesData.allSeries,
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[ JSON.stringify( rawSeriesData.allSeries.map( ( t ) => t.id ) ) ]
+	);
+
+	const searchResults = useMemo(
+		() => rawSeriesData.searchResults,
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[ JSON.stringify( rawSeriesData.searchResults.map( ( t ) => t.id ) ) ]
+	);
+
+	/* eslint-disable react-hooks/exhaustive-deps */
+	const currentSeriesTerms = useMemo(
+		() => rawSeriesData.currentSeriesTerms,
+		[
+			JSON.stringify(
+				rawSeriesData.currentSeriesTerms.map( ( t ) => t.id )
+			),
+		]
+	);
+	/* eslint-enable react-hooks/exhaustive-deps */
+
+	const isLoading = rawSeriesData.isLoading;
 
 	// Build suggestions from all series and search results
 	const suggestions = useMemo( (): string[] => {
@@ -198,6 +221,11 @@ export default function SeriesPanel(): JSX.Element | null {
 	const currentValues = useMemo( (): string[] => {
 		return currentSeriesTerms.map( ( term ) => term.name );
 	}, [ currentSeriesTerms ] );
+
+	// Don't render for non-post types (AFTER all hooks)
+	if ( postType !== 'post' ) {
+		return null;
+	}
 
 	// Handle series selection change
 	const handleSeriesChange = ( tokens: ( string | TokenItem )[] ): void => {
@@ -304,6 +332,7 @@ export default function SeriesPanel(): JSX.Element | null {
 						__experimentalExpandOnFocus
 						__experimentalShowHowTo={ false }
 						__next40pxDefaultSize
+						__nextHasNoMarginBottom
 						disabled={ isSaving || isCreating }
 						placeholder={ __(
 							'Search or create series…',

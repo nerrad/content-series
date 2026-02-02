@@ -6,11 +6,13 @@
  *
  * Global dependency: contentSeriesQuickEditData (provided via wp_add_inline_script)
  */
+
+/* global MutationObserver */
+
 ( function () {
 	// Timeout constants (in milliseconds).
 	const DOM_UPDATE_DELAY = 200; // Wait for WordPress to update DOM after save
-	const AJAX_CLEANUP_TIMEOUT = 10000; // Force remove AJAX handler after 10 seconds
-	const FALLBACK_SAVE_DELAY = 1000; // Assume save completed if jQuery unavailable
+	const OBSERVER_CLEANUP_TIMEOUT = 10000; // Force disconnect observer after 10 seconds
 
 	// Get REST URL from inline script data (global provided by WordPress).
 	const restUrl = contentSeriesQuickEditData.restUrl;
@@ -574,28 +576,26 @@
 		// Call original save function.
 		wpInlineSave.apply( this, arguments );
 
-		// Listen for AJAX completion to update counts after save.
-		let cleanupTimeoutId;
-		const ajaxCompleteHandler = function ( event, xhr, settings ) {
-			// Check if this is the inline-save AJAX request.
-			if (
-				settings.data &&
-				settings.data.indexOf( 'action=inline-save' ) !== -1
-			) {
-				// Remove handler to prevent multiple triggers.
-				if ( typeof jQuery !== 'undefined' ) {
-					jQuery( document ).off(
-						'ajaxComplete',
-						ajaxCompleteHandler
-					);
-				}
+		// Use MutationObserver to detect when WordPress removes the edit row after save.
+		// WordPress replaces #edit-{id} with the updated post row on successful save.
+		const editRow = document.getElementById( 'edit-' + post_id );
+		if ( ! editRow || ! editRow.parentNode ) {
+			// Edit row not found, can't observe - clean up and exit.
+			delete seriesBeforeSave[ post_id ];
+			return;
+		}
 
-				// Clear the cleanup timeout since handler fired successfully.
-				if ( cleanupTimeoutId ) {
-					clearTimeout( cleanupTimeoutId );
-				}
+		// Track cleanup state to coordinate between observer and timeout.
+		let observerFired = false;
 
-				// Wait for DOM to update (WordPress updates the row asynchronously).
+		const observer = new MutationObserver( function () {
+			// Check if the edit row was removed from DOM.
+			if ( ! document.getElementById( 'edit-' + post_id ) ) {
+				// Edit row removed - save completed successfully.
+				observerFired = true;
+				observer.disconnect();
+
+				// Wait for DOM to fully stabilize (WordPress uses fadeIn animation).
 				setTimeout( function () {
 					if ( post_id > 0 ) {
 						updateSeriesCountsAfterSave(
@@ -607,33 +607,21 @@
 					}
 				}, DOM_UPDATE_DELAY );
 			}
-		};
+		} );
 
-		// Attach handler (using jQuery since WordPress uses it for AJAX).
-		// If jQuery is not available, we'll assume success after a delay.
-		if ( typeof jQuery !== 'undefined' ) {
-			jQuery( document ).on( 'ajaxComplete', ajaxCompleteHandler );
+		// Observe the parent element for child list changes.
+		observer.observe( editRow.parentNode, { childList: true } );
 
-			// Add timeout to forcibly remove handler if AJAX never completes (prevents memory leak).
-			cleanupTimeoutId = setTimeout( function () {
-				jQuery( document ).off( 'ajaxComplete', ajaxCompleteHandler );
+		// Add timeout to forcibly disconnect observer if save never completes (prevents memory leak).
+		setTimeout( function () {
+			if ( ! observerFired ) {
+				observer.disconnect();
 				// Clean up tracking data.
 				if ( post_id > 0 && seriesBeforeSave[ post_id ] ) {
 					delete seriesBeforeSave[ post_id ];
 				}
-			}, AJAX_CLEANUP_TIMEOUT );
-		} else {
-			// Fallback: assume save completed successfully after a delay.
-			setTimeout( function () {
-				if ( post_id > 0 ) {
-					updateSeriesCountsAfterSave(
-						post_id,
-						seriesBeforeSave[ post_id ] || []
-					);
-					delete seriesBeforeSave[ post_id ];
-				}
-			}, FALLBACK_SAVE_DELAY );
-		}
+			}
+		}, OBSERVER_CLEANUP_TIMEOUT );
 	};
 
 	/**

@@ -235,40 +235,58 @@ class Term_Meta {
 	 */
 	private function get_media_script() {
 		return "
-		jQuery(document).ready(function($) {
+		document.addEventListener('DOMContentLoaded', function() {
 			var mediaFrame;
 
-			$('.series-icon-upload').on('click', function(e) {
-				e.preventDefault();
+			document.querySelectorAll('.series-icon-upload').forEach(function(btn) {
+				btn.addEventListener('click', function(e) {
+					e.preventDefault();
 
-				if (mediaFrame) {
+					if (mediaFrame) {
+						mediaFrame.open();
+						return;
+					}
+
+					mediaFrame = wp.media({
+						title: '" . esc_js( __( 'Select Series Icon', 'content-series' ) ) . "',
+						button: { text: '" . esc_js( __( 'Use as Icon', 'content-series' ) ) . "' },
+						multiple: false
+					});
+
+					mediaFrame.on('select', function() {
+						var attachment = mediaFrame.state().get('selection').first().toJSON();
+						document.getElementById('series_icon').value = attachment.url;
+						document.getElementById('series_icon_id').value = attachment.id;
+						var preview = document.querySelector('.series-icon-preview');
+						if (preview) {
+							preview.textContent = '';
+							var img = document.createElement('img');
+							img.src = attachment.url;
+							img.style.maxWidth = '150px';
+							img.style.maxHeight = '150px';
+							preview.appendChild(img);
+						}
+						var removeBtn = document.querySelector('.series-icon-remove');
+						if (removeBtn) {
+							removeBtn.style.display = '';
+						}
+					});
+
 					mediaFrame.open();
-					return;
-				}
-
-				mediaFrame = wp.media({
-					title: '" . esc_js( __( 'Select Series Icon', 'content-series' ) ) . "',
-					button: { text: '" . esc_js( __( 'Use as Icon', 'content-series' ) ) . "' },
-					multiple: false
 				});
-
-				mediaFrame.on('select', function() {
-					var attachment = mediaFrame.state().get('selection').first().toJSON();
-					$('#series_icon').val(attachment.url);
-					$('#series_icon_id').val(attachment.id);
-					$('.series-icon-preview').html('<img src=\"' + attachment.url + '\" style=\"max-width: 150px; max-height: 150px;\">');
-					$('.series-icon-remove').show();
-				});
-
-				mediaFrame.open();
 			});
 
-			$('.series-icon-remove').on('click', function(e) {
-				e.preventDefault();
-				$('#series_icon').val('');
-				$('#series_icon_id').val('');
-				$('.series-icon-preview').html('');
-				$(this).hide();
+			document.querySelectorAll('.series-icon-remove').forEach(function(btn) {
+				btn.addEventListener('click', function(e) {
+					e.preventDefault();
+					document.getElementById('series_icon').value = '';
+					document.getElementById('series_icon_id').value = '';
+					var preview = document.querySelector('.series-icon-preview');
+					if (preview) {
+						preview.innerHTML = '';
+					}
+					this.style.display = 'none';
+				});
 			});
 		});
 		";

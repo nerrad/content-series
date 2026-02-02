@@ -275,7 +275,7 @@ class Admin {
 		wp_enqueue_script(
 			'content-series-quick-edit',
 			CONTENT_SERIES_URL . 'assets/js/quick-edit-series-parts.js',
-			array( 'jquery' ),
+			array( 'inline-edit-post' ),
 			CONTENT_SERIES_VERSION,
 			true
 		);

@@ -6,6 +6,7 @@
 /// <reference path="./wordpress-components.d.ts" />
 /// <reference path="./wordpress-blocks.d.ts" />
 /// <reference path="./wordpress-block-editor.d.ts" />
+/// <reference path="./wordpress-hooks.d.ts" />
 
 export interface Series {
 	id: number;

@@ -1,41 +1,58 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 declare module '@wordpress/blocks' {
-	export interface BlockBindingsSourceConfig {
+	export interface BlockBindingsSourceConfig<
+		TGetFieldsArgs = never,
+		TGetValuesArgs = never,
+	> {
 		name: string;
 		label: string;
 		usesContext?: string[];
-		getFieldsList?: ( args: any ) => any[];
-		getValues?: ( args: any ) => Record< string, any >;
+		getFieldsList?: ( args: TGetFieldsArgs ) => unknown[];
+		getValues?: ( args: TGetValuesArgs ) => Record< string, unknown >;
 	}
 
-	export interface BlockTypeSettings {
-		edit?: React.ComponentType< any >;
+	export interface BlockTypeSettings< TProps = never > {
+		edit?: React.ComponentType< TProps >;
 		save?: () => JSX.Element | null;
-		[ key: string ]: any;
+		[ key: string ]: unknown;
 	}
 
-	export function registerBlockBindingsSource(
-		config: BlockBindingsSourceConfig
+	export interface BlockVariation<
+		TAttributes extends Record< string, unknown > = Record< string, unknown >,
+		TInnerBlocks = unknown[],
+	> {
+		name: string;
+		title?: string;
+		description?: string;
+		category?: string;
+		keywords?: string[];
+		attributes?: TAttributes;
+		isActive?: ( blockAttributes: TAttributes ) => boolean;
+		innerBlocks?: TInnerBlocks;
+		scope?: string[];
+		[ key: string ]: unknown;
+	}
+
+	export function registerBlockBindingsSource<
+		TGetFieldsArgs = never,
+		TGetValuesArgs = never,
+	>(
+		config: BlockBindingsSourceConfig< TGetFieldsArgs, TGetValuesArgs >
 	): void;
 
-	export function registerBlockType(
-		nameOrMetadata: string | { name: string; [ key: string ]: any },
-		settings?: BlockTypeSettings
+	export function registerBlockType< TProps = never >(
+		nameOrMetadata:
+			| string
+			| ( {
+					name: string;
+			  } & Record< string, unknown > ),
+		settings?: BlockTypeSettings< TProps >
 	): void;
 
-	export function registerBlockVariation(
+	export function registerBlockVariation<
+		TAttributes extends Record< string, unknown > = Record< string, unknown >,
+		TInnerBlocks = unknown[],
+	>(
 		blockName: string,
-		variation: {
-			name: string;
-			title?: string;
-			description?: string;
-			category?: string;
-			keywords?: string[];
-			attributes?: Record< string, any >;
-			isActive?: ( blockAttributes: any ) => boolean;
-			innerBlocks?: any[];
-			scope?: string[];
-			[ key: string ]: any;
-		}
+		variation: BlockVariation< TAttributes, TInnerBlocks >
 	): void;
 }

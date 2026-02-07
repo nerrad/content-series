@@ -19,6 +19,8 @@ class Templates {
 		add_action( 'init', array( $this, 'register_templates' ), 20 );
 		add_filter( 'get_the_archive_title', array( $this, 'series_archive_title' ) );
 		add_action( 'pre_get_posts', array( $this, 'series_catalog_query' ) );
+		add_filter( 'the_excerpt', array( $this, 'append_archive_series_information' ), 20 );
+		add_filter( 'the_content', array( $this, 'append_archive_series_information' ), 20 );
 
 		// Register rewrite rule for series catalog.
 		add_action( 'init', array( $this, 'add_rewrite_rules' ) );
@@ -184,6 +186,105 @@ class Templates {
 		}
 
 		return $title;
+	}
+
+	/**
+	 * Append series information to post excerpts/content on non-series archive pages.
+	 *
+	 * @param string $content Post excerpt/content.
+	 * @return string Post excerpt/content with series information.
+	 */
+	public function append_archive_series_information( $content ) {
+		if ( ! $this->should_append_archive_series_information() ) {
+			return $content;
+		}
+
+		$post_id = get_the_ID();
+		if ( ! $post_id ) {
+			return $content;
+		}
+
+		$series_information = self::get_archive_series_information_markup( $post_id );
+		if ( '' === $series_information ) {
+			return $content;
+		}
+
+		// Prevent duplicate output if the same filter runs on already-formatted content.
+		if ( false !== strpos( $content, 'content-series-archive-info' ) ) {
+			return $content;
+		}
+
+		return $content . $series_information;
+	}
+
+	/**
+	 * Determine whether to append series information for current loop context.
+	 *
+	 * @return bool True when series information should be appended.
+	 */
+	private function should_append_archive_series_information() {
+		if ( is_admin() || is_feed() ) {
+			return false;
+		}
+
+		if ( ! in_the_loop() || ! is_main_query() ) {
+			return false;
+		}
+
+		if ( ! ( is_archive() || is_home() || is_search() ) ) {
+			return false;
+		}
+
+		if ( is_tax( CONTENT_SERIES_TAXONOMY ) || get_query_var( 'content_series_catalog' ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Build archive series information markup for a post.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return string HTML markup, or empty string when no series is assigned.
+	 */
+	public static function get_archive_series_information_markup( $post_id ) {
+		$post_id = absint( $post_id );
+		if ( ! $post_id ) {
+			return '';
+		}
+
+		$series_terms = get_the_terms( $post_id, CONTENT_SERIES_TAXONOMY );
+		if ( ! $series_terms || is_wp_error( $series_terms ) ) {
+			return '';
+		}
+
+		$series_term = reset( $series_terms );
+		if ( ! $series_term instanceof \WP_Term ) {
+			return '';
+		}
+
+		$series_link = get_term_link( $series_term );
+		if ( is_wp_error( $series_link ) ) {
+			return '';
+		}
+
+		$series_part = Post_Meta::get_post_series_part( $post_id, $series_term->term_id );
+
+		/* translators: %d: series part number. */
+		$part_label = sprintf( __( 'Part %d', 'content-series' ), $series_part );
+
+		return sprintf(
+			'<p class="content-series-archive-info">' .
+				'<span class="content-series-archive-info__label">%1$s</span> ' .
+				'<a class="content-series-archive-info__link" href="%2$s">%3$s</a> ' .
+				'<span class="content-series-archive-info__part">%4$s</span>' .
+			'</p>',
+			esc_html__( 'Series:', 'content-series' ),
+			esc_url( $series_link ),
+			esc_html( $series_term->name ),
+			esc_html( $part_label )
+		);
 	}
 
 	/**

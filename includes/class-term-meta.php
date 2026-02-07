@@ -133,6 +133,14 @@ class Term_Meta {
 	 * @param int $term_id Term ID.
 	 */
 	public function save_icon( $term_id ) {
+		$has_icon_url = isset( $_POST['series_icon'] );
+		$has_icon_id  = isset( $_POST['series_icon_id'] );
+
+		// Programmatic term creation/edit can trigger this hook without form POST data.
+		if ( ! $has_icon_url && ! $has_icon_id ) {
+			return;
+		}
+
 		// Verify nonce for term form submission.
 		if ( isset( $_POST['_wpnonce'] ) ) {
 			$nonce_action    = $term_id ? "update-tag_{$term_id}" : 'add-tag';
@@ -150,12 +158,12 @@ class Term_Meta {
 			wp_die( esc_html__( 'Nonce is missing.', 'content-series' ) );
 		}
 
-		if ( isset( $_POST['series_icon'] ) ) {
+		if ( $has_icon_url ) {
 			$icon_url = sanitize_url( wp_unslash( $_POST['series_icon'] ) );
 			update_term_meta( $term_id, self::ICON_META_KEY, $icon_url );
 		}
 
-		if ( isset( $_POST['series_icon_id'] ) ) {
+		if ( $has_icon_id ) {
 			$icon_id = absint( $_POST['series_icon_id'] );
 			update_term_meta( $term_id, self::ICON_ID_META_KEY, $icon_id );
 		}

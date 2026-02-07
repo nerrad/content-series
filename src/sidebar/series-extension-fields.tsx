@@ -45,6 +45,7 @@ export default function SeriesExtensionFields(): JSX.Element | null {
 	};
 	const hasInitializedSeriesRef = useRef( false );
 	const previousSeriesIdsRef = useRef< number[] >( [] );
+	const pendingSeriesIdsRef = useRef< number[] >( [] );
 
 	// Get post data from editor store
 	const {
@@ -196,23 +197,31 @@ export default function SeriesExtensionFields(): JSX.Element | null {
 		}
 
 		const previousSeriesIds = previousSeriesIdsRef.current;
-		if ( ! isNewPost && ! postStatus ) {
-			return;
-		}
-
 		const addedIds = currentSeriesIds.filter(
 			( id ) => ! previousSeriesIds.includes( id )
 		);
 		const removedIds = previousSeriesIds.filter(
 			( id ) => ! currentSeriesIds.includes( id )
 		);
+		previousSeriesIdsRef.current = currentSeriesIds;
 
-		if ( addedIds.length === 0 && removedIds.length === 0 ) {
+		if ( addedIds.length > 0 || removedIds.length > 0 ) {
+			const pendingSet = new Set( pendingSeriesIdsRef.current );
+
+			removedIds.forEach( ( id ) => pendingSet.delete( id ) );
+			addedIds.forEach( ( id ) => pendingSet.add( id ) );
+
+			pendingSeriesIdsRef.current = Array.from( pendingSet );
+		}
+
+		if ( ! isNewPost && ! postStatus ) {
 			return;
 		}
 
-		previousSeriesIdsRef.current = currentSeriesIds;
-		if ( addedIds.length === 0 ) {
+		const pendingIds = pendingSeriesIdsRef.current.filter( ( id ) =>
+			currentSeriesIds.includes( id )
+		);
+		if ( pendingIds.length === 0 ) {
 			return;
 		}
 
@@ -224,7 +233,7 @@ export default function SeriesExtensionFields(): JSX.Element | null {
 
 			if ( shouldSuggestNextPart ) {
 				const suggestions = await Promise.all(
-					addedIds.map( async ( id ) => ( {
+					pendingIds.map( async ( id ) => ( {
 						id,
 						order: await getSuggestedOrder( id ),
 					} ) )
@@ -241,7 +250,7 @@ export default function SeriesExtensionFields(): JSX.Element | null {
 					}
 				} );
 			} else {
-				addedIds.forEach( ( id ) => {
+				pendingIds.forEach( ( id ) => {
 					if ( ! ( id in newOrder ) ) {
 						newOrder[ id ] = 1;
 						hasChanges = true;
@@ -252,6 +261,10 @@ export default function SeriesExtensionFields(): JSX.Element | null {
 			if ( hasChanges ) {
 				editPost( { series_order: newOrder } );
 			}
+
+			pendingSeriesIdsRef.current = pendingSeriesIdsRef.current.filter(
+				( id ) => ! pendingIds.includes( id )
+			);
 		};
 
 		initializeSeriesOrder();

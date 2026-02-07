@@ -11,6 +11,12 @@ declare const contentSeriesVariations: {
 	description: string;
 };
 
+interface TermsQueryVariationAttributes {
+	termQuery?: {
+		taxonomy?: string;
+	};
+}
+
 /**
  * Get the inner blocks structure for the variation.
  *
@@ -109,11 +115,8 @@ registerBlockVariation( 'core/terms-query', {
 			inherit: false,
 		},
 	},
-	isActive( blockAttributes: any ) {
-		return (
-			blockAttributes.termQuery &&
-			blockAttributes.termQuery.taxonomy === 'series'
-		);
+	isActive( blockAttributes: TermsQueryVariationAttributes ) {
+		return blockAttributes.termQuery?.taxonomy === 'series';
 	},
 	innerBlocks: getInnerBlocks(),
 	scope: [ 'inserter', 'block' ],

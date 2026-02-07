@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 declare module '@wordpress/block-editor' {
 	import type { ComponentType, ReactNode } from 'react';
 
 	export interface BlockProps {
 		className?: string;
-		[ key: string ]: any;
+		[ key: string ]: unknown;
 	}
 
 	export function useBlockProps( props?: BlockProps ): BlockProps;

@@ -12,14 +12,18 @@ A modern, block-editor-native WordPress plugin for managing content series. Grou
 - **Custom Blocks**: Two powerful blocks for displaying series content:
   - **Series Navigation**: Display previous/next navigation within a series
   - **Series Post List**: Show a list of all posts in the current series
-- **Editor Integration**: Sidebar panel for managing series directly in the block editor
+- **Editor Integration**: Sidebar fields for series order and optional short titles
+- **Quick Edit Support**: Edit series part numbers directly from the posts list table
+- **Catalog Variation**: A `core/terms-query` variation for displaying all series
+- **Block Bindings**: Custom term-meta binding source for series metadata (e.g. icon)
+- **Archive Enhancements**: Adds contextual series information on non-series archive views
 - **Legacy Compatibility**: Compatible with the PublishPress Series plugin (uses the same taxonomy slug)
 - **REST API Support**: Full REST API integration for headless WordPress setups
 - **Block Templates**: Archive and catalog block templates for series display
 
 ## Requirements
 
-- WordPress 6.8 or higher
+- WordPress 6.9 or higher
 - PHP 8.1 or higher
 - Node.js and pnpm (for development)
 
@@ -29,7 +33,7 @@ A modern, block-editor-native WordPress plugin for managing content series. Grou
 
    ```bash
    cd wp-content/plugins
-   git clone https://github.com/your-username/content-series.git
+   git clone https://github.com/nerrad/content-series.git
    ```
 
 2. Install PHP dependencies:
@@ -65,7 +69,7 @@ A modern, block-editor-native WordPress plugin for managing content series. Grou
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-username/content-series.git
+   git clone https://github.com/nerrad/content-series.git
    cd content-series
    ```
 
@@ -103,19 +107,28 @@ A modern, block-editor-native WordPress plugin for managing content series. Grou
 - `pnpm build` - Build production assets
 - `pnpm start` - Start development mode with watch
 - `pnpm check-types` - Run TypeScript type checking
+- `pnpm check-types:tests` - Run TypeScript checks for test files
 
 #### Linting & Formatting
 
 - `pnpm lint:js` - Lint JavaScript/TypeScript files
 - `pnpm lint:css` - Lint CSS/SCSS files
+- `pnpm lint:pkg-json` - Lint `package.json`
 - `pnpm lint:php` - Lint PHP files using PHPCS
 - `pnpm lint:php:fix` - Auto-fix PHP linting issues
 - `pnpm format` - Format code using wp-scripts
+- `pnpm packages-update` - Update WordPress packages managed by `wp-scripts`
 
 #### Testing
 
 - `pnpm test` - Run PHPUnit tests
 - `pnpm test:watch` - Run PHPUnit tests in watch mode
+- `pnpm test:js` - Run JavaScript unit tests (Jest)
+- `pnpm test:js:watch` - Run JavaScript unit tests in watch mode
+- `pnpm test:js:coverage` - Generate JavaScript unit test coverage
+- `pnpm test:e2e` - Run Playwright end-to-end tests
+- `pnpm test:e2e:ui` - Run Playwright tests in UI mode
+- `pnpm test:e2e:debug` - Run Playwright tests in debug mode
 
 #### Environment Management
 
@@ -178,7 +191,7 @@ The wrapper script automatically sets up the shared environment and points it to
 
 Add the Series Navigation block to display previous/next links within a series. Options include:
 
-- Show/hide series title
+- Show/hide series name
 - Show/hide part numbers
 - Customize previous/next labels
 - Choose arrow style (arrow, chevron, or none)
@@ -187,7 +200,7 @@ Add the Series Navigation block to display previous/next links within a series. 
 
 Add the Series Post List block to display all posts in the current series. Options include:
 
-- Show/hide part numbers
+- Use ordered or unordered list display
 - Show/hide short titles
 - Highlight current post
 - Show/hide series title and icon
@@ -196,9 +209,14 @@ Add the Series Post List block to display all posts in the current series. Optio
 
 ```
 content-series/
-├── build/              # Built assets (not in git)
+├── .github/workflows/  # CI workflows
+├── assets/             # Admin quick-edit assets
+├── bin/scripts/        # Local environment helper scripts
+├── build/              # Generated JS/CSS build artifacts
 ├── includes/           # PHP classes
 │   ├── class-admin.php
+│   ├── class-block-bindings.php
+│   ├── class-block-variations.php
 │   ├── class-content-series.php
 │   ├── class-migration.php
 │   ├── class-post-meta.php
@@ -210,30 +228,78 @@ content-series/
 │   ├── blocks/         # Block definitions
 │   │   ├── series-navigation/
 │   │   └── series-post-list/
+│   ├── bindings/       # Block bindings source registration
 │   ├── sidebar/        # Editor sidebar components
+│   ├── variations/     # Block variations
 │   └── types/          # TypeScript type definitions
-├── tests/              # PHPUnit tests
+├── tests/              # Test files (PHP, JS setup, E2E)
+├── jest.config.js      # Jest configuration
+├── playwright.config.js # Playwright configuration
 ├── content-series.php  # Main plugin file
 ├── composer.json       # PHP dependencies
 ├── package.json        # Node.js dependencies
+├── tsconfig.json       # TypeScript config for source
+├── tsconfig.tests.json # TypeScript config for tests
 └── README.md           # This file
 ```
 
 ## Testing
 
-The plugin uses PHPUnit for testing. Tests are located in the `tests/` directory.
+The plugin supports both PHP and JavaScript tests.
 
-Run tests using:
+### PHPUnit
 
 ```bash
 pnpm test
 ```
 
-Or in watch mode:
+Watch mode:
 
 ```bash
 pnpm test:watch
 ```
+
+### JavaScript Unit Tests (Jest)
+
+```bash
+pnpm test:js
+```
+
+Watch mode:
+
+```bash
+pnpm test:js:watch
+```
+
+Coverage report:
+
+```bash
+pnpm test:js:coverage
+```
+
+### End-to-End Tests (Playwright)
+
+Install Playwright browsers once:
+
+```bash
+pnpm exec playwright install
+```
+
+Start `wp-env` first (`pnpm env:start`), then run:
+
+```bash
+pnpm test:e2e
+```
+
+Playwright UI mode:
+
+```bash
+pnpm test:e2e:ui
+```
+
+By default, E2E tests target `http://localhost:8888` and log in with the
+standard wp-env credentials (`admin` / `password`) unless overridden via
+environment variables.
 
 ## Code Standards
 
@@ -250,7 +316,7 @@ Contributions are welcome! Please follow these guidelines:
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
-4. Run tests and linting (`pnpm test && pnpm lint:php && pnpm lint:js`)
+4. Run checks (`pnpm check-types && pnpm check-types:tests && pnpm test && pnpm test:js && pnpm lint:php && pnpm lint:js`)
 5. Commit your changes (`git commit -m 'Add amazing feature'`)
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request

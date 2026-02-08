@@ -37,11 +37,82 @@ interface ArrowStyle {
 	next: string;
 }
 
-const ARROW_STYLES: Record< string, ArrowStyle > = {
+export const ARROW_STYLES: Record< string, ArrowStyle > = {
 	arrow: { prev: '\u2190', next: '\u2192' }, // ← →
 	chevron: { prev: '\u2039', next: '\u203A' }, // ‹ ›
 	none: { prev: '', next: '' },
 };
+
+interface NavigationViewStateArgs {
+	isLoading: boolean;
+	series?: number[];
+	error: string | null;
+	prev: SeriesPost | null;
+	next: SeriesPost | null;
+}
+
+export function getNavigationPosts(
+	seriesData: SeriesData | null,
+	postId?: number
+): {
+	prev: SeriesPost | null;
+	next: SeriesPost | null;
+} {
+	if ( ! seriesData || ! seriesData.posts || ! postId ) {
+		return { prev: null, next: null };
+	}
+
+	const currentIndex = seriesData.posts.findIndex( ( p ) => p.id === postId );
+
+	if ( currentIndex === -1 ) {
+		return { prev: null, next: null };
+	}
+
+	return {
+		prev: currentIndex > 0 ? seriesData.posts[ currentIndex - 1 ] : null,
+		next:
+			currentIndex < seriesData.posts.length - 1
+				? seriesData.posts[ currentIndex + 1 ]
+				: null,
+	};
+}
+
+export function getNavigationViewState( {
+	isLoading,
+	series,
+	error,
+	prev,
+	next,
+}: NavigationViewStateArgs ):
+	| 'loading'
+	| 'no-series'
+	| 'error'
+	| 'no-navigation'
+	| 'ready' {
+	if ( isLoading ) {
+		return 'loading';
+	}
+
+	if ( ! series || series.length === 0 ) {
+		return 'no-series';
+	}
+
+	if ( error ) {
+		return 'error';
+	}
+
+	if ( ! prev && ! next ) {
+		return 'no-navigation';
+	}
+
+	return 'ready';
+}
+
+export function getArrowStyle(
+	arrowStyle: NavigationBlockAttributes[ 'arrowStyle' ]
+): ArrowStyle {
+	return ARROW_STYLES[ arrowStyle ?? 'arrow' ] || ARROW_STYLES.arrow;
+}
 
 export default function Edit( {
 	attributes,
@@ -126,37 +197,18 @@ export default function Edit( {
 		className: 'wp-block-content-series-navigation',
 	} );
 
-	// Find prev/next posts
-	const getNavPosts = (): {
-		prev: SeriesPost | null;
-		next: SeriesPost | null;
-	} => {
-		if ( ! seriesData || ! seriesData.posts ) {
-			return { prev: null, next: null };
-		}
-
-		const currentIndex = seriesData.posts.findIndex(
-			( p ) => p.id === postId
-		);
-
-		if ( currentIndex === -1 ) {
-			return { prev: null, next: null };
-		}
-
-		return {
-			prev:
-				currentIndex > 0 ? seriesData.posts[ currentIndex - 1 ] : null,
-			next:
-				currentIndex < seriesData.posts.length - 1
-					? seriesData.posts[ currentIndex + 1 ]
-					: null,
-		};
-	};
-
-	const arrows = ARROW_STYLES[ arrowStyle ?? 'arrow' ] || ARROW_STYLES.arrow;
+	const { prev, next } = getNavigationPosts( seriesData, postId );
+	const viewState = getNavigationViewState( {
+		isLoading,
+		series,
+		error,
+		prev,
+		next,
+	} );
+	const arrows = getArrowStyle( arrowStyle );
 
 	// Loading state
-	if ( isLoading ) {
+	if ( viewState === 'loading' ) {
 		return (
 			<div { ...blockProps }>
 				<Placeholder
@@ -170,7 +222,7 @@ export default function Edit( {
 	}
 
 	// No series
-	if ( ! series || series.length === 0 ) {
+	if ( viewState === 'no-series' ) {
 		return (
 			<div { ...blockProps }>
 				<Placeholder
@@ -186,22 +238,20 @@ export default function Edit( {
 	}
 
 	// Error state
-	if ( error ) {
+	if ( viewState === 'error' ) {
 		return (
 			<div { ...blockProps }>
 				<Placeholder
 					icon="warning"
 					label={ __( 'Series Navigation', 'content-series' ) }
-					instructions={ error }
+					instructions={ error ?? undefined }
 				/>
 			</div>
 		);
 	}
 
-	const { prev, next } = getNavPosts();
-
 	// No navigation needed (only post in series or not found)
-	if ( ! prev && ! next ) {
+	if ( viewState === 'no-navigation' ) {
 		return (
 			<div { ...blockProps }>
 				<Placeholder
@@ -321,7 +371,7 @@ export default function Edit( {
 
 				{ showSeriesName && seriesData && (
 					<div className="wp-block-content-series-navigation__series">
-						<a href="#">{ seriesData.series.name }</a>
+						<span>{ seriesData.series.name }</span>
 					</div>
 				) }
 

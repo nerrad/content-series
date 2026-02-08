@@ -97,6 +97,8 @@ function getInnerBlocks() {
 	];
 }
 
+export { getInnerBlocks };
+
 registerBlockVariation( 'core/terms-query', {
 	name: 'content-series/catalog',
 	title: contentSeriesVariations.title,

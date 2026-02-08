@@ -33,6 +33,32 @@ jobs:
             - name: Run TypeScript checks
               run: pnpm check-types
 
+            - name: Run test TypeScript checks
+              run: pnpm check-types:tests
+
+    js-unit:
+        name: Jest
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: pnpm
+
+            - name: Install Node dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Run JavaScript unit tests
+              run: pnpm test:js
+
     phpunit:
         name: PHPUnit
         runs-on: ubuntu-latest
@@ -68,6 +94,55 @@ jobs:
 
             - name: Run PHPUnit tests
               run: pnpm test
+
+            - name: Destroy wp-env
+              if: always()
+              run: pnpm env:destroy || true
+
+    playwright:
+        name: Playwright
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: pnpm
+
+            - name: Install Node dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Install Playwright Chromium
+              run: |
+                  PLAYWRIGHT_CLI=$(node -e "const path=require('path'); const wpScriptsDir=path.dirname(require.resolve('@wordpress/scripts/package.json')); process.stdout.write(require.resolve('@playwright/test/cli',{ paths:[wpScriptsDir] }));")
+                  node "$PLAYWRIGHT_CLI" install --with-deps chromium
+
+            - name: Start wp-env
+              run: pnpm env:start
+
+            - name: Run Playwright tests
+              env:
+                  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+                  WP_BASE_URL: http://localhost:8888
+              run: pnpm wp-scripts test-playwright --config=playwright.config.js --project=chromium
+
+            - name: Upload Playwright artifacts
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: playwright-artifacts
+                  path: |
+                      playwright-report
+                      test-results
+                      artifacts
+                  if-no-files-found: ignore
 
             - name: Destroy wp-env
               if: always()

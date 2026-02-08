@@ -12,5 +12,11 @@ wordpress-tests-lib/
 .wp-env/
 .wp-env.json.override
 
+# JavaScript test artifacts
+coverage/
+playwright-report/
+test-results/
+artifacts/
+
 # Various AI things
 ignore/

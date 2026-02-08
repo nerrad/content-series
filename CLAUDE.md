@@ -7,4 +7,9 @@ This project uses **pnpm** - always use pnpm commands instead of npm.
 Always create a new branch off `trunk` for any work. Never commit directly to trunk. Use branch naming like `fix/issue-N-description` or `feature/description`.
 
 ## Development Environment
-Use Chrome browser automation to verify changes in the WordPress editor. The dev environment may not always be running - check package.json for scripts to start it (typically `pnpm start` for watch mode, `wp-env start` for the WordPress environment).
+Use browser automation to verify changes in the WordPress editor when relevant.
+The dev environment may not always be running - use package scripts:
+
+- `pnpm start` for asset watch mode
+- `pnpm env:start` for the WordPress environment
+- `pnpm test:e2e` for Playwright end-to-end tests

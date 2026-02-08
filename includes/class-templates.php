@@ -21,6 +21,8 @@ class Templates {
 		add_action( 'pre_get_posts', array( $this, 'series_catalog_query' ) );
 		add_filter( 'the_excerpt', array( $this, 'append_archive_series_information' ), 20 );
 		add_filter( 'the_content', array( $this, 'append_archive_series_information' ), 20 );
+		add_filter( 'render_block_core/post-excerpt', array( $this, 'append_archive_series_information_for_post_block' ), 20, 2 );
+		add_filter( 'render_block_core/post-content', array( $this, 'append_archive_series_information_for_post_block' ), 20, 2 );
 
 		// Register rewrite rule for series catalog.
 		add_action( 'init', array( $this, 'add_rewrite_rules' ) );
@@ -195,7 +197,7 @@ class Templates {
 	 * @return string Post excerpt/content with series information.
 	 */
 	public function append_archive_series_information( $content ) {
-		if ( ! $this->should_append_archive_series_information() ) {
+		if ( ! $this->should_append_archive_series_information( true ) ) {
 			return $content;
 		}
 
@@ -204,8 +206,41 @@ class Templates {
 			return $content;
 		}
 
-		$series_information = self::get_archive_series_information_markup( $post_id );
-		if ( '' === $series_information ) {
+		return $this->append_archive_series_information_to_content( $content, $post_id );
+	}
+
+	/**
+	 * Append series information for core post blocks in Query Loop contexts.
+	 *
+	 * @param string $block_content Rendered block content.
+	 * @param array  $block         Parsed block data.
+	 * @return string Block content with series information.
+	 */
+	public function append_archive_series_information_for_post_block( $block_content, $block ) {
+		if ( ! $this->should_append_archive_series_information( false ) ) {
+			return $block_content;
+		}
+
+		if ( empty( $block['context']['postId'] ) ) {
+			return $block_content;
+		}
+
+		return $this->append_archive_series_information_to_content(
+			$block_content,
+			absint( $block['context']['postId'] )
+		);
+	}
+
+	/**
+	 * Append series information to a rendered content string for a given post.
+	 *
+	 * @param string $content Rendered content.
+	 * @param int    $post_id Post ID.
+	 * @return string Content with appended series information.
+	 */
+	private function append_archive_series_information_to_content( $content, $post_id ) {
+		$post_id = absint( $post_id );
+		if ( ! $post_id ) {
 			return $content;
 		}
 
@@ -214,20 +249,26 @@ class Templates {
 			return $content;
 		}
 
+		$series_information = self::get_archive_series_information_markup( $post_id );
+		if ( '' === $series_information ) {
+			return $content;
+		}
+
 		return $content . $series_information;
 	}
 
 	/**
-	 * Determine whether to append series information for current loop context.
+	 * Determine whether to append series information in the current request context.
 	 *
+	 * @param bool $require_loop_context Whether loop context checks should be required.
 	 * @return bool True when series information should be appended.
 	 */
-	private function should_append_archive_series_information() {
+	private function should_append_archive_series_information( $require_loop_context = true ) {
 		if ( is_admin() || is_feed() ) {
 			return false;
 		}
 
-		if ( ! in_the_loop() || ! is_main_query() ) {
+		if ( $require_loop_context && ( ! in_the_loop() || ! is_main_query() ) ) {
 			return false;
 		}
 

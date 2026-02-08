@@ -1,0 +1,40 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "content-series/navigation-link",
+	"version": "1.0.0",
+	"title": "Series Navigation Link",
+	"category": "theme",
+	"description": "Displays a previous or next series navigation link.",
+	"textdomain": "content-series",
+	"parent": [ "content-series/navigation" ],
+	"attributes": {
+		"direction": {
+			"type": "string",
+			"default": "previous",
+			"enum": [ "previous", "next" ]
+		},
+		"showTitle": {
+			"type": "boolean",
+			"default": true
+		},
+		"showPartNumbers": {
+			"type": "boolean",
+			"default": true
+		},
+		"label": {
+			"type": "string",
+			"default": ""
+		},
+		"arrowStyle": {
+			"type": "string",
+			"default": "arrow",
+			"enum": [ "arrow", "chevron", "none" ]
+		}
+	},
+	"usesContext": [ "postId", "postType" ],
+	"supports": {
+		"html": false
+	},
+	"editorScript": "file:./index.js"
+}

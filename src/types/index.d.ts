@@ -49,13 +49,23 @@ export interface BlockAttributes {
 	context?: string;
 }
 
-export interface NavigationBlockAttributes {
+export interface NavigationLinkBlockAttributes {
+	direction?: 'previous' | 'next';
 	showTitle?: boolean;
-	showSeriesName?: boolean;
 	showPartNumbers?: boolean;
-	prevLabel?: string;
-	nextLabel?: string;
+	label?: string;
 	arrowStyle?: 'arrow' | 'chevron' | 'none';
+}
+
+export interface SeriesTitleBlockAttributes {
+	isLink?: boolean;
+	level?: number;
+}
+
+export interface SeriesIconBlockAttributes {
+	isLink?: boolean;
+	size?: number;
+	alt?: string;
 }
 
 export interface BlockContext {

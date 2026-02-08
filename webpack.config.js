@@ -14,7 +14,19 @@ module.exports = {
 		),
 		'blocks/series-navigation/index': path.resolve(
 			__dirname,
-			'src/blocks/series-navigation/index.ts'
+			'src/blocks/series-navigation/index.tsx'
+		),
+		'blocks/series-navigation-link/index': path.resolve(
+			__dirname,
+			'src/blocks/series-navigation-link/index.ts'
+		),
+		'blocks/series-title/index': path.resolve(
+			__dirname,
+			'src/blocks/series-title/index.ts'
+		),
+		'blocks/series-icon/index': path.resolve(
+			__dirname,
+			'src/blocks/series-icon/index.ts'
 		),
 
 		// Block bindings

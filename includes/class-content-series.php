@@ -152,6 +152,36 @@ class Content_Series {
 				)
 			);
 		}
+
+		// Series Navigation Link block.
+		if ( ! \WP_Block_Type_Registry::get_instance()->is_registered( 'content-series/navigation-link' ) ) {
+			register_block_type_from_metadata(
+				CONTENT_SERIES_PATH . 'build/blocks/series-navigation-link',
+				array(
+					'render_callback' => array( $this, 'render_series_navigation_link' ),
+				)
+			);
+		}
+
+		// Series Title block.
+		if ( ! \WP_Block_Type_Registry::get_instance()->is_registered( 'content-series/series-title' ) ) {
+			register_block_type_from_metadata(
+				CONTENT_SERIES_PATH . 'build/blocks/series-title',
+				array(
+					'render_callback' => array( $this, 'render_series_title' ),
+				)
+			);
+		}
+
+		// Series Icon block.
+		if ( ! \WP_Block_Type_Registry::get_instance()->is_registered( 'content-series/series-icon' ) ) {
+			register_block_type_from_metadata(
+				CONTENT_SERIES_PATH . 'build/blocks/series-icon',
+				array(
+					'render_callback' => array( $this, 'render_series_icon' ),
+				)
+			);
+		}
 	}
 
 	/**
@@ -206,8 +236,14 @@ class Content_Series {
 		$render_file = CONTENT_SERIES_PATH . 'src/blocks/series-post-list/render.php';
 		if ( file_exists( $render_file ) ) {
 			ob_start();
-			include $render_file;
-			return ob_get_clean();
+			$included_output = include $render_file;
+			$buffered_output = ob_get_clean();
+
+			if ( is_string( $included_output ) ) {
+				return $included_output;
+			}
+
+			return $buffered_output;
 		}
 		return '';
 	}
@@ -225,8 +261,89 @@ class Content_Series {
 		$render_file = CONTENT_SERIES_PATH . 'src/blocks/series-navigation/render.php';
 		if ( file_exists( $render_file ) ) {
 			ob_start();
-			include $render_file;
-			return ob_get_clean();
+			$included_output = include $render_file;
+			$buffered_output = ob_get_clean();
+
+			if ( is_string( $included_output ) ) {
+				return $included_output;
+			}
+
+			return $buffered_output;
+		}
+		return '';
+	}
+
+	/**
+	 * Render Series Navigation Link block.
+	 *
+	 * @param array    $attributes Block attributes.
+	 * @param string   $content    Block content.
+	 * @param WP_Block $block      Block instance.
+	 * @return string Rendered block HTML.
+	 */
+	public function render_series_navigation_link( $attributes, $content, $block ) {
+		// Include render file.
+		$render_file = CONTENT_SERIES_PATH . 'src/blocks/series-navigation-link/render.php';
+		if ( file_exists( $render_file ) ) {
+			ob_start();
+			$included_output = include $render_file;
+			$buffered_output = ob_get_clean();
+
+			if ( is_string( $included_output ) ) {
+				return $included_output;
+			}
+
+			return $buffered_output;
+		}
+		return '';
+	}
+
+	/**
+	 * Render Series Title block.
+	 *
+	 * @param array    $attributes Block attributes.
+	 * @param string   $content    Block content.
+	 * @param WP_Block $block      Block instance.
+	 * @return string Rendered block HTML.
+	 */
+	public function render_series_title( $attributes, $content, $block ) {
+		// Include render file.
+		$render_file = CONTENT_SERIES_PATH . 'src/blocks/series-title/render.php';
+		if ( file_exists( $render_file ) ) {
+			ob_start();
+			$included_output = include $render_file;
+			$buffered_output = ob_get_clean();
+
+			if ( is_string( $included_output ) ) {
+				return $included_output;
+			}
+
+			return $buffered_output;
+		}
+		return '';
+	}
+
+	/**
+	 * Render Series Icon block.
+	 *
+	 * @param array    $attributes Block attributes.
+	 * @param string   $content    Block content.
+	 * @param WP_Block $block      Block instance.
+	 * @return string Rendered block HTML.
+	 */
+	public function render_series_icon( $attributes, $content, $block ) {
+		// Include render file.
+		$render_file = CONTENT_SERIES_PATH . 'src/blocks/series-icon/render.php';
+		if ( file_exists( $render_file ) ) {
+			ob_start();
+			$included_output = include $render_file;
+			$buffered_output = ob_get_clean();
+
+			if ( is_string( $included_output ) ) {
+				return $included_output;
+			}
+
+			return $buffered_output;
 		}
 		return '';
 	}

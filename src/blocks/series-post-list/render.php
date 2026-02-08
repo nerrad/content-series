@@ -9,34 +9,17 @@
  * @var WP_Block $block      Block instance.
  */
 
-use Content_Series\Post_Meta;
-use Content_Series\Term_Meta;
-use Content_Series\Rest_API;
+require_once dirname( __DIR__ ) . '/shared/series-context.php';
 
-// Get the current post ID from context.
-$content_series_post_id = $block->context['postId'] ?? get_the_ID();
+$content_series_context = content_series_get_series_context( $block );
 
-if ( ! $content_series_post_id ) {
+if ( ! $content_series_context ) {
 	return '';
 }
 
-// Get the post's series.
-$content_series_terms = get_the_terms( $content_series_post_id, CONTENT_SERIES_TAXONOMY );
-
-if ( ! $content_series_terms || is_wp_error( $content_series_terms ) ) {
-	// Not in a series, render nothing.
-	return '';
-}
-
-// Use the first series (primary).
-$content_series_series = $content_series_terms[0];
-
-// Get posts in the series.
-$content_series_posts = Rest_API::query_series_posts( $content_series_series->term_id );
-
-if ( empty( $content_series_posts ) ) {
-	return '';
-}
+$content_series_post_id = $content_series_context['post_id'];
+$content_series_posts   = $content_series_context['posts'];
+$content_series_post_type = get_post_type( $content_series_post_id ) ?: 'post';
 
 // Block attributes.
 $content_series_show_numbers      = $attributes['showNumbers'] ?? true;
@@ -45,9 +28,6 @@ $content_series_highlight_current = $attributes['highlightCurrent'] ?? true;
 $content_series_show_series_title = $attributes['showSeriesTitle'] ?? true;
 $content_series_show_series_icon  = $attributes['showSeriesIcon'] ?? true;
 
-// Get series icon.
-$content_series_icon = Term_Meta::get_series_icon( $content_series_series->term_id );
-
 // Build wrapper attributes.
 $content_series_wrapper_attributes = get_block_wrapper_attributes(
 	array(
@@ -55,22 +35,58 @@ $content_series_wrapper_attributes = get_block_wrapper_attributes(
 	)
 );
 
+$content_series_render_child_block = static function ( $block_name, $block_attributes, $context ) {
+	$parsed_block = array(
+		'blockName'    => $block_name,
+		'attrs'        => $block_attributes,
+		'innerBlocks'  => array(),
+		'innerHTML'    => '',
+		'innerContent' => array(),
+	);
+
+	$block_instance = new WP_Block( $parsed_block, $context );
+	return $block_instance->render();
+};
+
+$content_series_render_context = array_merge(
+	$block->context,
+	array(
+		'postId'   => $content_series_post_id,
+		'postType' => $content_series_post_type,
+	)
+);
+
+$content_series_header_markup = '';
+
+if ( $content_series_show_series_title ) {
+	if ( $content_series_show_series_icon ) {
+		$content_series_header_markup .= $content_series_render_child_block(
+			'content-series/series-icon',
+			array(
+				'isLink'    => true,
+				'size'      => 60,
+				'className' => 'wp-block-content-series-post-list__icon',
+			),
+			$content_series_render_context
+		);
+	}
+
+	$content_series_header_markup .= $content_series_render_child_block(
+		'content-series/series-title',
+		array(
+			'isLink'    => true,
+			'level'     => 3,
+			'className' => 'wp-block-content-series-post-list__title',
+		),
+		$content_series_render_context
+	);
+}
+
 ?>
 <div <?php echo wp_kses_post( $content_series_wrapper_attributes ); ?>>
-	<?php if ( $content_series_show_series_title ) : ?>
+	<?php if ( '' !== trim( wp_strip_all_tags( $content_series_header_markup ) ) ) : ?>
 		<div class="wp-block-content-series-post-list__header">
-			<?php if ( $content_series_show_series_icon && $content_series_icon ) : ?>
-				<img
-					src="<?php echo esc_url( $content_series_icon ); ?>"
-					alt=""
-					class="wp-block-content-series-post-list__icon"
-				>
-			<?php endif; ?>
-			<h3 class="wp-block-content-series-post-list__title">
-				<a href="<?php echo esc_url( get_term_link( $content_series_series ) ); ?>">
-					<?php echo esc_html( $content_series_series->name ); ?>
-				</a>
-			</h3>
+			<?php echo $content_series_header_markup; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		</div>
 	<?php endif; ?>
 

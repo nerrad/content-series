@@ -1,0 +1,33 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "content-series/series-title",
+	"version": "1.0.0",
+	"title": "Series Title",
+	"category": "theme",
+	"description": "Displays the current series title.",
+	"textdomain": "content-series",
+	"attributes": {
+		"isLink": {
+			"type": "boolean",
+			"default": true
+		},
+		"level": {
+			"type": "number",
+			"default": 3
+		}
+	},
+	"usesContext": [ "postId", "postType" ],
+	"supports": {
+		"html": false,
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true
+		},
+		"color": {
+			"text": true,
+			"link": true
+		}
+	},
+	"editorScript": "file:./index.js"
+}

@@ -1,0 +1,33 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "content-series/series-icon",
+	"version": "1.0.0",
+	"title": "Series Icon",
+	"category": "theme",
+	"description": "Displays the current series icon.",
+	"textdomain": "content-series",
+	"attributes": {
+		"isLink": {
+			"type": "boolean",
+			"default": true
+		},
+		"size": {
+			"type": "number",
+			"default": 40
+		},
+		"alt": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"usesContext": [ "postId", "postType" ],
+	"supports": {
+		"html": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"editorScript": "file:./index.js"
+}

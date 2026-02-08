@@ -5,36 +5,14 @@
 	"version": "1.0.0",
 	"title": "Series Navigation",
 	"category": "theme",
-	"description": "Displays previous/next navigation links within a series.",
+	"description": "Wrapper block for previous/next navigation, series title, and series icon.",
 	"textdomain": "content-series",
-	"attributes": {
-		"showTitle": {
-			"type": "boolean",
-			"default": true
-		},
-		"showSeriesName": {
-			"type": "boolean",
-			"default": false
-		},
-		"showPartNumbers": {
-			"type": "boolean",
-			"default": true
-		},
-		"prevLabel": {
-			"type": "string",
-			"default": "Previous"
-		},
-		"nextLabel": {
-			"type": "string",
-			"default": "Next"
-		},
-		"arrowStyle": {
-			"type": "string",
-			"default": "arrow",
-			"enum": [ "arrow", "chevron", "none" ]
-		}
-	},
 	"usesContext": [ "postId", "postType" ],
+	"allowedBlocks": [
+		"content-series/navigation-link",
+		"content-series/series-title",
+		"content-series/series-icon"
+	],
 	"supports": {
 		"html": false,
 		"color": {

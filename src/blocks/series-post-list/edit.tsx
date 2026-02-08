@@ -19,6 +19,7 @@ import type {
 	BlockAttributes,
 	BlockContext,
 	SeriesData,
+	SeriesPost,
 	WPPost,
 } from '../../types';
 
@@ -28,11 +29,63 @@ interface EditProps {
 	context: BlockContext;
 }
 
+interface PostListViewStateArgs {
+	isLoading: boolean;
+	series?: number[];
+	error: string | null;
+	seriesData: SeriesData | null;
+}
+
+export function getPostListViewState( {
+	isLoading,
+	series,
+	error,
+	seriesData,
+}: PostListViewStateArgs ):
+	| 'loading'
+	| 'no-series'
+	| 'error'
+	| 'no-data'
+	| 'ready' {
+	if ( isLoading ) {
+		return 'loading';
+	}
+
+	if ( ! series || series.length === 0 ) {
+		return 'no-series';
+	}
+
+	if ( error ) {
+		return 'error';
+	}
+
+	if ( ! seriesData ) {
+		return 'no-data';
+	}
+
+	return 'ready';
+}
+
+export function getListTag( showNumbers?: boolean ): 'ol' | 'ul' {
+	return showNumbers ? 'ol' : 'ul';
+}
+
+export function getPostDisplayTitle(
+	post: SeriesPost,
+	showShortTitle?: boolean
+): string {
+	if ( showShortTitle && post.short_title ) {
+		return post.short_title;
+	}
+
+	return post.title;
+}
+
 export default function Edit( {
 	attributes,
 	setAttributes,
 	context,
-}: EditProps ): JSX.Element {
+}: EditProps ): JSX.Element | null {
 	const {
 		showNumbers,
 		showShortTitle,
@@ -106,9 +159,15 @@ export default function Edit( {
 	const blockProps = useBlockProps( {
 		className: 'wp-block-content-series-post-list',
 	} );
+	const viewState = getPostListViewState( {
+		isLoading,
+		series,
+		error,
+		seriesData,
+	} );
 
 	// Loading state
-	if ( isLoading ) {
+	if ( viewState === 'loading' ) {
 		return (
 			<div { ...blockProps }>
 				<Placeholder
@@ -122,7 +181,7 @@ export default function Edit( {
 	}
 
 	// No series
-	if ( ! series || series.length === 0 ) {
+	if ( viewState === 'no-series' ) {
 		return (
 			<div { ...blockProps }>
 				<Placeholder
@@ -138,20 +197,20 @@ export default function Edit( {
 	}
 
 	// Error state
-	if ( error ) {
+	if ( viewState === 'error' ) {
 		return (
 			<div { ...blockProps }>
 				<Placeholder
 					icon="warning"
 					label={ __( 'Series Post List', 'content-series' ) }
-					instructions={ error }
+					instructions={ error ?? undefined }
 				/>
 			</div>
 		);
 	}
 
 	// No data yet
-	if ( ! seriesData ) {
+	if ( viewState === 'no-data' ) {
 		return (
 			<div { ...blockProps }>
 				<Placeholder
@@ -164,7 +223,11 @@ export default function Edit( {
 		);
 	}
 
-	const ListTag = showNumbers ? 'ol' : 'ul';
+	if ( ! seriesData ) {
+		return null;
+	}
+
+	const ListTag = getListTag( showNumbers );
 
 	return (
 		<>
@@ -236,10 +299,10 @@ export default function Edit( {
 				<ListTag className="wp-block-content-series-post-list__items">
 					{ seriesData.posts.map( ( post ) => {
 						const isCurrent = post.id === postId;
-						const title =
-							showShortTitle && post.short_title
-								? post.short_title
-								: post.title;
+						const title = getPostDisplayTitle(
+							post,
+							showShortTitle
+						);
 
 						return (
 							<li

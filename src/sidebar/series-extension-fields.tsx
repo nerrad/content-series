@@ -39,6 +39,31 @@ interface CoreSelectReturn {
 	isLoading: boolean;
 }
 
+interface SeriesQuery {
+	[ key: string ]: number | number[];
+	include: number[];
+	per_page: number;
+}
+
+export function buildCurrentSeriesQuery(
+	currentSeriesIds: number[]
+): SeriesQuery | null {
+	return currentSeriesIds.length > 0
+		? { include: currentSeriesIds, per_page: 100 }
+		: null;
+}
+
+export function shouldSuggestNextPart(
+	isNewPost: boolean,
+	postStatus?: string
+): boolean {
+	return isNewPost || postStatus === 'draft' || postStatus === 'auto-draft';
+}
+
+export function parseSeriesOrderInput( value: string ): number {
+	return parseInt( value, 10 ) || 1;
+}
+
 export default function SeriesExtensionFields(): JSX.Element | null {
 	const { editPost } = useDispatch( editorStore ) as {
 		editPost: ( edits: Record< string, unknown > ) => void;
@@ -106,10 +131,7 @@ export default function SeriesExtensionFields(): JSX.Element | null {
 
 	// Build query for current series terms
 	const currentSeriesQuery = useMemo(
-		() =>
-			currentSeriesIds.length > 0
-				? { include: currentSeriesIds, per_page: 100 }
-				: null,
+		() => buildCurrentSeriesQuery( currentSeriesIds ),
 		[ currentSeriesIds ]
 	);
 
@@ -156,8 +178,7 @@ export default function SeriesExtensionFields(): JSX.Element | null {
 		[ currentSeriesQuery ]
 	);
 
-	const shouldSuggestNextPart =
-		isNewPost || postStatus === 'draft' || postStatus === 'auto-draft';
+	const shouldSuggestOrder = shouldSuggestNextPart( isNewPost, postStatus );
 
 	const getSuggestedOrder = useCallback(
 		async ( seriesId: number ): Promise< number > => {
@@ -231,7 +252,7 @@ export default function SeriesExtensionFields(): JSX.Element | null {
 			const newOrder = { ...seriesOrder };
 			let hasChanges = false;
 
-			if ( shouldSuggestNextPart ) {
+			if ( shouldSuggestOrder ) {
 				const suggestions = await Promise.all(
 					pendingIds.map( async ( id ) => ( {
 						id,
@@ -280,14 +301,14 @@ export default function SeriesExtensionFields(): JSX.Element | null {
 		isNewPost,
 		postStatus,
 		seriesOrder,
-		shouldSuggestNextPart,
+		shouldSuggestOrder,
 	] );
 
 	// Handle order change for a specific series
 	const handleOrderChange = ( seriesId: number, newOrder: string ): void => {
 		const newSeriesOrder: SeriesOrder = {
 			...seriesOrder,
-			[ seriesId ]: parseInt( newOrder, 10 ) || 1,
+			[ seriesId ]: parseSeriesOrderInput( newOrder ),
 		};
 		editPost( { series_order: newSeriesOrder } );
 	};

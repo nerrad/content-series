@@ -1,0 +1,23 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"noEmit": true,
+		"declaration": false,
+		"declarationMap": false,
+		"emitDeclarationOnly": false,
+		"composite": false
+	},
+	"include": [
+		"src/**/*.test.ts",
+		"src/**/*.test.tsx",
+		"src/**/*.spec.ts",
+		"src/**/*.spec.tsx",
+		"tests/**/*.test.ts",
+		"tests/**/*.test.tsx",
+		"tests/**/*.spec.ts",
+		"tests/**/*.spec.tsx",
+		"tests/js/jest-globals.d.ts"
+	],
+	"exclude": [ "**/build", "**/node_modules", "dist" ],
+	"files": [ "src/types/index.d.ts", "tests/js/jest-globals.d.ts" ]
+}

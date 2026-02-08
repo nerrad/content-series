@@ -32,7 +32,8 @@ describe( 'term meta block bindings', () => {
 
 		expect( registerBlockBindingsSource ).toHaveBeenCalledTimes( 1 );
 
-		const sourceConfig = registerBlockBindingsSource.mock.calls[ 0 ][ 0 ] as {
+		const sourceConfig = registerBlockBindingsSource.mock
+			.calls[ 0 ][ 0 ] as {
 			name: string;
 			usesContext: string[];
 			getFieldsList: ( args: {
@@ -61,7 +62,8 @@ describe( 'term meta block bindings', () => {
 	test( 'maps binding args to term meta values', () => {
 		loadModule();
 
-		const sourceConfig = registerBlockBindingsSource.mock.calls[ 0 ][ 0 ] as {
+		const sourceConfig = registerBlockBindingsSource.mock
+			.calls[ 0 ][ 0 ] as {
 			getValues: ( args: {
 				bindings: Record< string, { args?: { key?: string } } >;
 				context: { termId?: number; taxonomy?: string };
@@ -93,7 +95,11 @@ describe( 'term meta block bindings', () => {
 				taxonomy: 'series',
 			},
 			select: () => ( {
-				getEntityRecord,
+				getEntityRecord: getEntityRecord as unknown as (
+					kind: string,
+					taxonomy: string,
+					termId: number
+				) => { meta?: Record< string, unknown > } | undefined,
 			} ),
 		} );
 

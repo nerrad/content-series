@@ -109,7 +109,7 @@ export function getNavigationViewState( {
 }
 
 export function getArrowStyle(
-	arrowStyle: NavigationBlockAttributes['arrowStyle']
+	arrowStyle: NavigationBlockAttributes[ 'arrowStyle' ]
 ): ArrowStyle {
 	return ARROW_STYLES[ arrowStyle ?? 'arrow' ] || ARROW_STYLES.arrow;
 }

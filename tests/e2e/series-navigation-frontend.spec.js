@@ -2,12 +2,14 @@ const { test, expect } = require( './playwright' );
 const { loginAsAdmin } = require( './utils/auth' );
 
 test.describe( 'series navigation frontend', () => {
-	test( 'renders previous link for a post in a series', async ( { page } ) => {
+	test( 'renders previous link for a post in a series', async ( {
+		page,
+	} ) => {
 		await loginAsAdmin( page );
 		await page.goto( '/wp-admin/' );
 
-		await page.waitForFunction(
-			() => Boolean( window.wp?.apiFetch && window.wp?.data )
+		await page.waitForFunction( () =>
+			Boolean( window.wp?.apiFetch && window.wp?.data )
 		);
 
 		const data = await page.evaluate( async () => {
@@ -33,8 +35,14 @@ test.describe( 'series navigation frontend', () => {
 				} );
 			};
 
-			const first = await createSeriesPost( `E2E Nav Part 1 ${ now }`, 1 );
-			const second = await createSeriesPost( `E2E Nav Part 2 ${ now }`, 2 );
+			const first = await createSeriesPost(
+				`E2E Nav Part 1 ${ now }`,
+				1
+			);
+			const second = await createSeriesPost(
+				`E2E Nav Part 2 ${ now }`,
+				2
+			);
 			const navigationHost = await createSeriesPost(
 				`E2E Nav Host ${ now }`,
 				3,

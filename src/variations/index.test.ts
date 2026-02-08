@@ -2,7 +2,7 @@ describe( 'series catalog variation', () => {
 	const registerBlockVariation = jest.fn();
 
 	const loadModule = (): {
-		getInnerBlocks: () => unknown[];
+		getInnerBlocks: () => Array< unknown[] >;
 	} => {
 		jest.resetModules();
 
@@ -15,12 +15,12 @@ describe( 'series catalog variation', () => {
 			registerBlockVariation,
 		} ) );
 
-		let exports: { getInnerBlocks: () => unknown[] } | undefined;
+		let exports: { getInnerBlocks: () => Array< unknown[] > } | undefined;
 		jest.isolateModules( () => {
 			exports = require( './index' );
 		} );
 
-		return exports as { getInnerBlocks: () => unknown[] };
+		return exports as { getInnerBlocks: () => Array< unknown[] > };
 	};
 
 	beforeEach( () => {
@@ -32,7 +32,8 @@ describe( 'series catalog variation', () => {
 
 		expect( registerBlockVariation ).toHaveBeenCalledTimes( 1 );
 
-		const [ blockName, variation ] = registerBlockVariation.mock.calls[ 0 ] as [
+		const [ blockName, variation ] = registerBlockVariation.mock
+			.calls[ 0 ] as [
 			string,
 			{
 				name: string;
@@ -61,8 +62,20 @@ describe( 'series catalog variation', () => {
 
 	test( 'builds inner blocks with image binding for series icon', () => {
 		const { getInnerBlocks } = loadModule();
-		const innerBlocks = getInnerBlocks();
-		const imageBlock = innerBlocks[ 0 ][ 2 ][ 0 ][ 2 ][ 0 ];
+		const innerBlocks = getInnerBlocks() as any[][];
+		const imageBlock = innerBlocks[ 0 ][ 2 ][ 0 ][ 2 ][ 0 ] as [
+			string,
+			{
+				metadata: {
+					bindings: {
+						url: {
+							source: string;
+							args: { key: string };
+						};
+					};
+				};
+			},
+		];
 
 		expect( imageBlock[ 0 ] ).toBe( 'core/image' );
 		expect( imageBlock[ 1 ].metadata.bindings.url.source ).toBe(

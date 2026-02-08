@@ -12,7 +12,9 @@ describe( 'series taxonomy filter', () => {
 	);
 
 	test( 'returns the original selector for non-series taxonomies', () => {
-		const Wrapped = extendSeriesTermSelector( OriginalComponent );
+		const Wrapped = extendSeriesTermSelector(
+			OriginalComponent
+		) as ( props: { slug: string } ) => JSX.Element;
 		const output = Wrapped( { slug: 'category' } );
 
 		expect( output.type ).toBe( OriginalComponent );
@@ -20,7 +22,9 @@ describe( 'series taxonomy filter', () => {
 	} );
 
 	test( 'appends extension fields when slug is series', () => {
-		const Wrapped = extendSeriesTermSelector( OriginalComponent );
+		const Wrapped = extendSeriesTermSelector(
+			OriginalComponent
+		) as ( props: { slug: string } ) => JSX.Element;
 		const output = Wrapped( { slug: 'series' } );
 		const children = output.props.children as Array< {
 			type: unknown;

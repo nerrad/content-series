@@ -33,6 +33,9 @@ jobs:
             - name: Run TypeScript checks
               run: pnpm check-types
 
+            - name: Run test TypeScript checks
+              run: pnpm check-types:tests
+
     js-unit:
         name: Jest
         runs-on: ubuntu-latest

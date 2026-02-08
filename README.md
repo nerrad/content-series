@@ -107,6 +107,7 @@ A modern, block-editor-native WordPress plugin for managing content series. Grou
 - `pnpm build` - Build production assets
 - `pnpm start` - Start development mode with watch
 - `pnpm check-types` - Run TypeScript type checking
+- `pnpm check-types:tests` - Run TypeScript checks for test files
 
 #### Linting & Formatting
 
@@ -315,7 +316,7 @@ Contributions are welcome! Please follow these guidelines:
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
-4. Run checks (`pnpm check-types && pnpm test && pnpm test:js && pnpm lint:php && pnpm lint:js`)
+4. Run checks (`pnpm check-types && pnpm check-types:tests && pnpm test && pnpm test:js && pnpm lint:php && pnpm lint:js`)
 5. Commit your changes (`git commit -m 'Add amazing feature'`)
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request

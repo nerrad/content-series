@@ -8,8 +8,8 @@ test.describe( 'series extension sidebar fields', () => {
 		await loginAsAdmin( page );
 		await page.goto( '/wp-admin/post-new.php' );
 
-		await page.waitForFunction(
-			() => Boolean( window.wp?.apiFetch && window.wp?.data )
+		await page.waitForFunction( () =>
+			Boolean( window.wp?.apiFetch && window.wp?.data )
 		);
 
 		const series = await page.evaluate( async () => {
@@ -39,13 +39,17 @@ test.describe( 'series extension sidebar fields', () => {
 		}, series.id );
 
 		await expect( page.getByText( 'Order in Series' ) ).toBeVisible();
-		await expect( page.getByLabel( 'Short Title (optional)' ) ).toBeVisible();
+		await expect(
+			page.getByLabel( 'Short Title (optional)' )
+		).toBeVisible();
 
 		const orderInput = page.locator(
 			'.content-series-extension__order input[type="number"]'
 		);
 		await orderInput.fill( '7' );
-		await page.getByLabel( 'Short Title (optional)' ).fill( 'Sidebar Title' );
+		await page
+			.getByLabel( 'Short Title (optional)' )
+			.fill( 'Sidebar Title' );
 
 		const editedValues = await page.evaluate( ( seriesId ) => {
 			const editor = window.wp.data.select( 'core/editor' );

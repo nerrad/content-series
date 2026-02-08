@@ -5,7 +5,8 @@
 		"declaration": false,
 		"declarationMap": false,
 		"emitDeclarationOnly": false,
-		"composite": false
+		"composite": false,
+		"types": [ "jest", "react" ]
 	},
 	"include": [
 		"src/**/*.test.ts",
@@ -16,8 +17,7 @@
 		"tests/**/*.test.tsx",
 		"tests/**/*.spec.ts",
 		"tests/**/*.spec.tsx",
-		"tests/js/jest-globals.d.ts"
+		"tests/js/test-globals.d.ts"
 	],
-	"exclude": [ "**/build", "**/node_modules", "dist" ],
-	"files": [ "src/types/index.d.ts", "tests/js/jest-globals.d.ts" ]
+	"exclude": [ "**/build", "**/node_modules", "dist" ]
 }

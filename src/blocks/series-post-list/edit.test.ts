@@ -1,8 +1,4 @@
-import {
-	getListTag,
-	getPostDisplayTitle,
-	getPostListViewState,
-} from './edit';
+import { getListTag, getPostDisplayTitle, getPostListViewState } from './edit';
 
 import type { SeriesData, SeriesPost } from '../../types';
 

@@ -371,7 +371,7 @@ export default function Edit( {
 
 				{ showSeriesName && seriesData && (
 					<div className="wp-block-content-series-navigation__series">
-						<a href="#">{ seriesData.series.name }</a>
+						<span>{ seriesData.series.name }</span>
 					</div>
 				) }
 

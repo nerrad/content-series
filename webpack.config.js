@@ -10,7 +10,7 @@ module.exports = {
 		// Blocks
 		'blocks/series-post-list/index': path.resolve(
 			__dirname,
-			'src/blocks/series-post-list/index.ts'
+			'src/blocks/series-post-list/index.tsx'
 		),
 		'blocks/series-navigation/index': path.resolve(
 			__dirname,

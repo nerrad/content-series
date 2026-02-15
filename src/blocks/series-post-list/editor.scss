@@ -3,4 +3,20 @@
 	.components-placeholder {
 		min-height: 100px;
 	}
+
+	// InnerBlocks header layout
+	&__header .block-editor-block-list__layout {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	// Prevent accidental link navigation in editor
+	&__items a {
+		pointer-events: none;
+	}
+
+	&__notice {
+		margin-top: 0.5rem;
+	}
 }

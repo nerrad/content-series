@@ -44,8 +44,6 @@ export interface BlockAttributes {
 	showNumbers?: boolean;
 	showShortTitle?: boolean;
 	highlightCurrent?: boolean;
-	showSeriesTitle?: boolean;
-	showSeriesIcon?: boolean;
 	context?: string;
 }
 

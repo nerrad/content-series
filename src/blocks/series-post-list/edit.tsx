@@ -3,12 +3,16 @@
  */
 
 import { __ } from '@wordpress/i18n';
-import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
+import {
+	useBlockProps,
+	InspectorControls,
+	InnerBlocks,
+} from '@wordpress/block-editor';
 import {
 	PanelBody,
 	ToggleControl,
-	Placeholder,
 	Spinner,
+	Notice,
 } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
@@ -34,6 +38,35 @@ interface PostListViewStateArgs {
 	series?: number[];
 	error: string | null;
 	seriesData: SeriesData | null;
+}
+
+export const POST_LIST_ALLOWED_BLOCKS: string[] = [
+	'content-series/series-icon',
+	'content-series/series-title',
+];
+
+export const POST_LIST_TEMPLATE: Array< unknown[] > = [
+	[
+		'content-series/series-icon',
+		{
+			isLink: true,
+			size: 60,
+		},
+	],
+	[
+		'content-series/series-title',
+		{
+			isLink: true,
+			level: 3,
+		},
+	],
+];
+
+export function getPostListTemplate(): Array< unknown[] > {
+	return POST_LIST_TEMPLATE.map( ( block ) => [
+		block[ 0 ],
+		{ ...( block[ 1 ] as Record< string, unknown > ) },
+	] );
 }
 
 export function getPostListViewState( {
@@ -85,14 +118,8 @@ export default function Edit( {
 	attributes,
 	setAttributes,
 	context,
-}: EditProps ): JSX.Element | null {
-	const {
-		showNumbers,
-		showShortTitle,
-		highlightCurrent,
-		showSeriesTitle,
-		showSeriesIcon,
-	} = attributes;
+}: EditProps ): JSX.Element {
+	const { showNumbers, showShortTitle, highlightCurrent } = attributes;
 
 	const postId = context.postId;
 	const [ seriesData, setSeriesData ] = useState< SeriesData | null >( null );
@@ -166,89 +193,12 @@ export default function Edit( {
 		seriesData,
 	} );
 
-	// Loading state
-	if ( viewState === 'loading' ) {
-		return (
-			<div { ...blockProps }>
-				<Placeholder
-					icon="list-view"
-					label={ __( 'Series Post List', 'content-series' ) }
-				>
-					<Spinner />
-				</Placeholder>
-			</div>
-		);
-	}
-
-	// No series
-	if ( viewState === 'no-series' ) {
-		return (
-			<div { ...blockProps }>
-				<Placeholder
-					icon="list-view"
-					label={ __( 'Series Post List', 'content-series' ) }
-					instructions={ __(
-						'This post is not part of a series. Add it to a series in the sidebar to display the series post list.',
-						'content-series'
-					) }
-				/>
-			</div>
-		);
-	}
-
-	// Error state
-	if ( viewState === 'error' ) {
-		return (
-			<div { ...blockProps }>
-				<Placeholder
-					icon="warning"
-					label={ __( 'Series Post List', 'content-series' ) }
-					instructions={ error ?? undefined }
-				/>
-			</div>
-		);
-	}
-
-	// No data yet
-	if ( viewState === 'no-data' ) {
-		return (
-			<div { ...blockProps }>
-				<Placeholder
-					icon="list-view"
-					label={ __( 'Series Post List', 'content-series' ) }
-				>
-					<Spinner />
-				</Placeholder>
-			</div>
-		);
-	}
-
-	if ( ! seriesData ) {
-		return null;
-	}
-
 	const ListTag = getListTag( showNumbers );
 
 	return (
 		<>
 			<InspectorControls>
 				<PanelBody title={ __( 'Display Settings', 'content-series' ) }>
-					<ToggleControl
-						label={ __( 'Show series title', 'content-series' ) }
-						checked={ showSeriesTitle ?? true }
-						onChange={ ( value: boolean ) =>
-							setAttributes( { showSeriesTitle: value } )
-						}
-						__nextHasNoMarginBottom
-					/>
-					<ToggleControl
-						label={ __( 'Show series icon', 'content-series' ) }
-						checked={ showSeriesIcon ?? true }
-						onChange={ ( value: boolean ) =>
-							setAttributes( { showSeriesIcon: value } )
-						}
-						__nextHasNoMarginBottom
-					/>
 					<ToggleControl
 						label={ __( 'Show post numbers', 'content-series' ) }
 						checked={ showNumbers ?? true }
@@ -280,48 +230,72 @@ export default function Edit( {
 			</InspectorControls>
 
 			<div { ...blockProps }>
-				{ showSeriesTitle && (
-					<div className="wp-block-content-series-post-list__header">
-						{ showSeriesIcon &&
-							seriesData.series.meta?.series_icon && (
-								<img
-									src={ seriesData.series.meta.series_icon }
-									alt=""
-									className="wp-block-content-series-post-list__icon"
-								/>
-							) }
-						<h3 className="wp-block-content-series-post-list__title">
-							{ seriesData.series.name }
-						</h3>
+				<div className="wp-block-content-series-post-list__header">
+					<InnerBlocks
+						allowedBlocks={ POST_LIST_ALLOWED_BLOCKS }
+						template={ getPostListTemplate() }
+						templateLock={ false }
+						orientation="horizontal"
+					/>
+				</div>
+
+				{ ( viewState === 'loading' || viewState === 'no-data' ) && (
+					<div className="wp-block-content-series-post-list__notice">
+						<Spinner />
 					</div>
 				) }
 
-				<ListTag className="wp-block-content-series-post-list__items">
-					{ seriesData.posts.map( ( post ) => {
-						const isCurrent = post.id === postId;
-						const title = getPostDisplayTitle(
-							post,
-							showShortTitle
-						);
+				{ viewState === 'no-series' && (
+					<Notice
+						className="wp-block-content-series-post-list__notice"
+						status="info"
+						isDismissible={ false }
+					>
+						{ __(
+							'This post is not part of a series. Add it to a series to display the post list.',
+							'content-series'
+						) }
+					</Notice>
+				) }
 
-						return (
-							<li
-								key={ post.id }
-								className={
-									isCurrent && highlightCurrent
-										? 'is-current'
-										: ''
-								}
-							>
-								{ isCurrent ? (
-									<span>{ title }</span>
-								) : (
-									<a href={ post.url }>{ title }</a>
-								) }
-							</li>
-						);
-					} ) }
-				</ListTag>
+				{ viewState === 'error' && (
+					<Notice
+						className="wp-block-content-series-post-list__notice"
+						status="error"
+						isDismissible={ false }
+					>
+						{ error }
+					</Notice>
+				) }
+
+				{ viewState === 'ready' && seriesData && (
+					<ListTag className="wp-block-content-series-post-list__items">
+						{ seriesData.posts.map( ( post ) => {
+							const isCurrent = post.id === postId;
+							const title = getPostDisplayTitle(
+								post,
+								showShortTitle
+							);
+
+							return (
+								<li
+									key={ post.id }
+									className={
+										isCurrent && highlightCurrent
+											? 'is-current'
+											: ''
+									}
+								>
+									{ isCurrent ? (
+										<span>{ title }</span>
+									) : (
+										<a href={ post.url }>{ title }</a>
+									) }
+								</li>
+							);
+						} ) }
+					</ListTag>
+				) }
 			</div>
 		</>
 	);

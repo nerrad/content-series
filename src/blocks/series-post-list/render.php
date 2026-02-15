@@ -17,16 +17,14 @@ if ( ! $content_series_context ) {
 	return '';
 }
 
-$content_series_post_id = $content_series_context['post_id'];
-$content_series_posts   = $content_series_context['posts'];
+$content_series_post_id   = $content_series_context['post_id'];
+$content_series_posts     = $content_series_context['posts'];
 $content_series_post_type = get_post_type( $content_series_post_id ) ?: 'post';
 
 // Block attributes.
 $content_series_show_numbers      = $attributes['showNumbers'] ?? true;
 $content_series_show_short_title  = $attributes['showShortTitle'] ?? false;
 $content_series_highlight_current = $attributes['highlightCurrent'] ?? true;
-$content_series_show_series_title = $attributes['showSeriesTitle'] ?? true;
-$content_series_show_series_icon  = $attributes['showSeriesIcon'] ?? true;
 
 // Build wrapper attributes.
 $content_series_wrapper_attributes = get_block_wrapper_attributes(
@@ -34,19 +32,6 @@ $content_series_wrapper_attributes = get_block_wrapper_attributes(
 		'class' => 'wp-block-content-series-post-list',
 	)
 );
-
-$content_series_render_child_block = static function ( $block_name, $block_attributes, $context ) {
-	$parsed_block = array(
-		'blockName'    => $block_name,
-		'attrs'        => $block_attributes,
-		'innerBlocks'  => array(),
-		'innerHTML'    => '',
-		'innerContent' => array(),
-	);
-
-	$block_instance = new WP_Block( $parsed_block, $context );
-	return $block_instance->render();
-};
 
 $content_series_render_context = array_merge(
 	$block->context,
@@ -56,32 +41,61 @@ $content_series_render_context = array_merge(
 	)
 );
 
+// Determine rendering path: new (InnerBlocks) vs legacy (self-closing).
+// Self-closing blocks have empty innerContent; paired blocks have non-empty innerContent.
+$content_series_has_inner_blocks = ! empty( $block->parsed_block['innerContent'] );
+
 $content_series_header_markup = '';
 
-if ( $content_series_show_series_title ) {
-	if ( $content_series_show_series_icon ) {
+if ( $content_series_has_inner_blocks ) {
+	// New path: render inner blocks (series-icon, series-title) from saved content.
+	foreach ( $block->parsed_block['innerBlocks'] ?? array() as $content_series_inner_block ) {
+		$content_series_header_markup .= ( new WP_Block( $content_series_inner_block, $content_series_render_context ) )->render();
+	}
+} else {
+	// Legacy fallback: manually construct child blocks from attributes.
+	$content_series_show_series_title = $attributes['showSeriesTitle'] ?? true;
+	$content_series_show_series_icon  = $attributes['showSeriesIcon'] ?? true;
+
+	$content_series_render_child_block = static function ( $block_name, $block_attributes, $context ) {
+		$parsed_block = array(
+			'blockName'    => $block_name,
+			'attrs'        => $block_attributes,
+			'innerBlocks'  => array(),
+			'innerHTML'    => '',
+			'innerContent' => array(),
+		);
+
+		$block_instance = new WP_Block( $parsed_block, $context );
+		return $block_instance->render();
+	};
+
+	if ( $content_series_show_series_title ) {
+		if ( $content_series_show_series_icon ) {
+			$content_series_header_markup .= $content_series_render_child_block(
+				'content-series/series-icon',
+				array(
+					'isLink'    => true,
+					'size'      => 60,
+					'className' => 'wp-block-content-series-post-list__icon',
+				),
+				$content_series_render_context
+			);
+		}
+
 		$content_series_header_markup .= $content_series_render_child_block(
-			'content-series/series-icon',
+			'content-series/series-title',
 			array(
 				'isLink'    => true,
-				'size'      => 60,
-				'className' => 'wp-block-content-series-post-list__icon',
+				'level'     => 3,
+				'className' => 'wp-block-content-series-post-list__title',
 			),
 			$content_series_render_context
 		);
 	}
-
-	$content_series_header_markup .= $content_series_render_child_block(
-		'content-series/series-title',
-		array(
-			'isLink'    => true,
-			'level'     => 3,
-			'className' => 'wp-block-content-series-post-list__title',
-		),
-		$content_series_render_context
-	);
 }
 
+ob_start();
 ?>
 <div <?php echo wp_kses_post( $content_series_wrapper_attributes ); ?>>
 	<?php if ( '' !== trim( wp_strip_all_tags( $content_series_header_markup ) ) ) : ?>
@@ -120,3 +134,5 @@ if ( $content_series_show_series_title ) {
 		</ul>
 	<?php endif; ?>
 </div>
+<?php
+return ob_get_clean();

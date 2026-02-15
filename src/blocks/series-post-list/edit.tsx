@@ -230,7 +230,13 @@ export default function Edit( {
 			</InspectorControls>
 
 			<div { ...blockProps }>
-				<div className="wp-block-content-series-post-list__header">
+				<div
+					className={ `wp-block-content-series-post-list__header${
+						viewState !== 'ready'
+							? ' wp-block-content-series-post-list__header--inactive'
+							: ''
+					}` }
+				>
 					<InnerBlocks
 						allowedBlocks={ POST_LIST_ALLOWED_BLOCKS }
 						template={ getPostListTemplate() }

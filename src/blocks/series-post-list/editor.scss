@@ -1,14 +1,15 @@
 .wp-block-content-series-post-list {
-	// Editor-specific styles
-	.components-placeholder {
-		min-height: 100px;
-	}
-
 	// InnerBlocks header layout
 	&__header .block-editor-block-list__layout {
 		display: flex;
 		align-items: center;
 		gap: 1rem;
+	}
+
+	// Dim header when block is not in ready state
+	&__header--inactive {
+		opacity: 0.4;
+		pointer-events: none;
 	}
 
 	// Prevent accidental link navigation in editor

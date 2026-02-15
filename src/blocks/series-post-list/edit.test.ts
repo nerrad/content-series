@@ -1,15 +1,25 @@
-import { getListTag, getPostDisplayTitle, getPostListViewState } from './edit';
+import {
+	getListTag,
+	getPostDisplayTitle,
+	getPostListViewState,
+	POST_LIST_ALLOWED_BLOCKS,
+	POST_LIST_TEMPLATE,
+	getPostListTemplate,
+} from './edit';
 
 import type { SeriesData, SeriesPost } from '../../types';
 
 jest.mock( '@wordpress/api-fetch', () => jest.fn() );
 jest.mock( '@wordpress/block-editor', () => ( {
+	InnerBlocks: Object.assign( () => null, {
+		Content: () => null,
+	} ),
 	InspectorControls: () => null,
 	useBlockProps: () => ( {} ),
 } ) );
 jest.mock( '@wordpress/components', () => ( {
 	PanelBody: () => null,
-	Placeholder: () => null,
+	Notice: () => null,
 	Spinner: () => null,
 	ToggleControl: () => null,
 } ) );
@@ -110,5 +120,30 @@ describe( 'series post list edit helpers', () => {
 				seriesData,
 			} )
 		).toBe( 'ready' );
+	} );
+} );
+
+describe( 'series post list InnerBlocks config', () => {
+	test( 'exposes expected allowed inner blocks', () => {
+		expect( POST_LIST_ALLOWED_BLOCKS ).toEqual( [
+			'content-series/series-icon',
+			'content-series/series-title',
+		] );
+	} );
+
+	test( 'provides a default template with icon and title blocks', () => {
+		expect( POST_LIST_TEMPLATE ).toEqual( [
+			[ 'content-series/series-icon', { isLink: true, size: 60 } ],
+			[ 'content-series/series-title', { isLink: true, level: 3 } ],
+		] );
+	} );
+
+	test( 'returns a cloned template structure', () => {
+		const first = getPostListTemplate();
+		const second = getPostListTemplate();
+
+		expect( first ).toEqual( second );
+		expect( first ).not.toBe( second );
+		expect( first[ 0 ][ 1 ] ).not.toBe( second[ 0 ][ 1 ] );
 	} );
 } );

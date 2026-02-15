@@ -20,20 +20,16 @@
 			"type": "boolean",
 			"default": true
 		},
-		"showSeriesTitle": {
-			"type": "boolean",
-			"default": true
-		},
-		"showSeriesIcon": {
-			"type": "boolean",
-			"default": true
-		},
 		"context": {
 			"type": "string",
 			"default": "single"
 		}
 	},
 	"usesContext": [ "postId", "postType" ],
+	"allowedBlocks": [
+		"content-series/series-icon",
+		"content-series/series-title"
+	],
 	"supports": {
 		"html": false,
 		"color": {
@@ -48,6 +44,12 @@
 		"spacing": {
 			"margin": true,
 			"padding": true
+		},
+		"__experimentalBorder": {
+			"color": true,
+			"radius": true,
+			"style": true,
+			"width": true
 		}
 	},
 	"editorScript": "file:./index.js",

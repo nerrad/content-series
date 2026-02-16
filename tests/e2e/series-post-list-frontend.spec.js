@@ -157,14 +157,10 @@ test.describe( 'series post list frontend', () => {
 		);
 		await expect( header ).toContainText( data.seriesName );
 
-		// Legacy path adds explicit CSS classes to child blocks.
-		const legacyIcon = header.locator(
-			'.wp-block-content-series-post-list__icon'
-		);
-		await expect( legacyIcon ).toBeVisible();
-
+		// Legacy path renders the series title via a child block.
+		// (Icon child block is omitted because no icon is set for the series.)
 		const legacyTitle = header.locator(
-			'.wp-block-content-series-post-list__title'
+			'.wp-block-content-series-series-title'
 		);
 		await expect( legacyTitle ).toBeVisible();
 

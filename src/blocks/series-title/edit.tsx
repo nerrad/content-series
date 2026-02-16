@@ -62,7 +62,7 @@ export default function Edit( {
 			<div { ...blockProps }>
 				<HeadingTag className="wp-block-content-series-title__heading">
 					{ isLink ?? true ? (
-						<a href="https://example.com">
+						<a>
 							{ __( 'Series title', 'content-series' ) }
 						</a>
 					) : (

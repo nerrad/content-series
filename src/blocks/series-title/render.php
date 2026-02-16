@@ -9,7 +9,7 @@
  * @var WP_Block $block      Block instance.
  */
 
-require_once dirname( __DIR__ ) . '/shared/series-context.php';
+require_once CONTENT_SERIES_PATH . 'includes/series-context.php';
 
 $content_series_context = content_series_get_series_context( $block );
 
@@ -34,7 +34,6 @@ $content_series_wrapper_attributes = get_block_wrapper_attributes(
 	)
 );
 
-ob_start();
 ?>
 <div <?php echo wp_kses_post( $content_series_wrapper_attributes ); ?>>
 	<<?php echo esc_html( $content_series_tag_name ); ?> class="wp-block-content-series-title__heading">
@@ -48,4 +47,3 @@ ob_start();
 	</<?php echo esc_html( $content_series_tag_name ); ?>>
 </div>
 <?php
-return ob_get_clean();

@@ -11,7 +11,7 @@
 
 use Content_Series\Term_Meta;
 
-require_once dirname( __DIR__ ) . '/shared/series-context.php';
+require_once CONTENT_SERIES_PATH . 'includes/series-context.php';
 
 $content_series_context = content_series_get_series_context( $block );
 
@@ -50,7 +50,6 @@ $content_series_wrapper_attributes = get_block_wrapper_attributes(
 	)
 );
 
-ob_start();
 ?>
 <div <?php echo wp_kses_post( $content_series_wrapper_attributes ); ?>>
 	<?php if ( $content_series_is_link && ! is_wp_error( $content_series_term_url ) ) : ?>
@@ -70,4 +69,3 @@ ob_start();
 	<?php endif; ?>
 </div>
 <?php
-return ob_get_clean();

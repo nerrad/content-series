@@ -11,7 +11,7 @@
 
 use Content_Series\Post_Meta;
 
-require_once dirname( __DIR__ ) . '/shared/series-context.php';
+require_once CONTENT_SERIES_PATH . 'includes/series-context.php';
 
 $content_series_direction = $attributes['direction'] ?? 'previous';
 
@@ -41,13 +41,12 @@ $content_series_wrapper_attributes = get_block_wrapper_attributes(
 );
 
 if ( ! $content_series_target_post ) {
-	ob_start();
 	?>
 	<div <?php echo wp_kses_post( $content_series_wrapper_attributes ); ?>>
 		<span class="wp-block-content-series-navigation__placeholder">&nbsp;</span>
 	</div>
 	<?php
-	return ob_get_clean();
+	return;
 }
 
 $content_series_show_title        = $attributes['showTitle'] ?? true;
@@ -79,7 +78,6 @@ $content_series_arrows = array(
 $content_series_arrow = $content_series_arrows[ $content_series_arrow_style ] ?? $content_series_arrows['arrow'];
 $content_series_part  = Post_Meta::get_post_series_part( $content_series_target_post->ID, $content_series_series->term_id );
 
-ob_start();
 ?>
 <div <?php echo wp_kses_post( $content_series_wrapper_attributes ); ?>>
 	<a href="<?php echo esc_url( get_permalink( $content_series_target_post->ID ) ); ?>">
@@ -115,4 +113,3 @@ ob_start();
 	</a>
 </div>
 <?php
-return ob_get_clean();

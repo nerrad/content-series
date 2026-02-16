@@ -67,7 +67,7 @@ export default function Edit( {
 
 			<div { ...blockProps }>
 				{ isLink ?? true ? (
-					<a href="https://example.com">
+					<a>
 						<span
 							className="wp-block-content-series-series-icon__image wp-block-content-series-navigation__icon wp-block-content-series-navigation__icon--placeholder"
 							style={ {

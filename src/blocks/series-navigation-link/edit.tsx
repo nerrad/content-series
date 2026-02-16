@@ -145,7 +145,7 @@ export default function Edit( {
 			</InspectorControls>
 
 			<div { ...blockProps }>
-				<a href="https://example.com">
+				<a>
 					{ isPrevious && arrows.prev && (
 						<span className="wp-block-content-series-navigation__arrow">
 							{ arrows.prev }

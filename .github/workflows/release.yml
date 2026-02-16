@@ -1,0 +1,75 @@
+name: Release
+
+on:
+    release:
+        types: [published]
+    workflow_dispatch:
+
+permissions:
+    contents: write
+
+jobs:
+    build-zip:
+        name: Build Plugin Zip
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: pnpm
+
+            - name: Install Node dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Build plugin assets
+              run: pnpm build
+
+            - name: Get version from tag
+              id: version
+              run: |
+                  if [ "${{ github.event_name }}" = "release" ]; then
+                    VERSION="${{ github.event.release.tag_name }}"
+                    VERSION="${VERSION#v}"
+                  else
+                    VERSION="dev-$(git rev-parse --short HEAD)"
+                  fi
+                  echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+            - name: Assemble plugin directory
+              run: |
+                  PLUGIN_SLUG="content-series"
+                  DIST_DIR="dist/${PLUGIN_SLUG}"
+                  mkdir -p "$DIST_DIR"
+
+                  # Sync files, excluding patterns from .distignore
+                  rsync -av --exclude-from='.distignore' ./ "$DIST_DIR/"
+
+                  # Remove .distignore from the output (it excludes others but not itself)
+                  rm -f "$DIST_DIR/.distignore"
+
+            - name: Create zip
+              run: |
+                  PLUGIN_SLUG="content-series"
+                  VERSION="${{ steps.version.outputs.version }}"
+                  cd dist
+                  zip -r "../${PLUGIN_SLUG}-${VERSION}.zip" "${PLUGIN_SLUG}/"
+
+            - name: Upload zip as workflow artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: content-series-${{ steps.version.outputs.version }}
+                  path: content-series-${{ steps.version.outputs.version }}.zip
+
+            - name: Attach zip to GitHub Release
+              if: github.event_name == 'release'
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: content-series-${{ steps.version.outputs.version }}.zip

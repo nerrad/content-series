@@ -9,7 +9,7 @@
  * @var WP_Block $block      Block instance.
  */
 
-require_once dirname( __DIR__ ) . '/shared/series-context.php';
+require_once CONTENT_SERIES_PATH . 'includes/series-context.php';
 
 $content_series_context = content_series_get_series_context( $block );
 

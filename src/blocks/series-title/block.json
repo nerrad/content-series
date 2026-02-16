@@ -29,5 +29,6 @@
 			"link": true
 		}
 	},
+	"render": "file:./render.php",
 	"editorScript": "file:./index.js"
 }

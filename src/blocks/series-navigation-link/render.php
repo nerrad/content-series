@@ -11,7 +11,7 @@
 
 use Content_Series\Post_Meta;
 
-require_once dirname( __DIR__ ) . '/shared/series-context.php';
+require_once CONTENT_SERIES_PATH . 'includes/series-context.php';
 
 $content_series_direction = $attributes['direction'] ?? 'previous';
 

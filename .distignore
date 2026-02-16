@@ -11,8 +11,7 @@ vendor/
 
 # Config files
 webpack.config.js
-tsconfig.json
-tsconfig.test.json
+tsconfig*.json
 phpunit.xml
 phpunit.xml.dist
 composer.json
@@ -24,6 +23,9 @@ jest.config.js
 .wp-env.json
 .eslintrc.js
 phpcs.xml.dist
+
+CLAUDE.md
+*.log
 
 # CI / IDE / VCS
 .git/

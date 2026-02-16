@@ -1,0 +1,43 @@
+# Development sources
+src/
+tests/
+bin/
+docs/
+
+# Node / Composer
+node_modules/
+vendor/
+.pnpm-store/
+
+# Config files
+webpack.config.js
+tsconfig*.json
+phpunit.xml
+phpunit.xml.dist
+composer.json
+composer.lock
+package.json
+pnpm-lock.yaml
+playwright.config.js
+jest.config.js
+.wp-env.json
+.eslintrc.js
+phpcs.xml.dist
+
+CLAUDE.md
+*.log
+
+# CI / IDE / VCS
+.git/
+.github/
+.claude/
+.cursor/
+.gitignore
+.phpunit.result.cache
+
+# Artifacts
+coverage/
+playwright-report/
+test-results/
+artifacts/
+ignore/

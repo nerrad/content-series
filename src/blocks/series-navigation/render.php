@@ -81,10 +81,8 @@ if ( '' === trim( wp_strip_all_tags( $content_series_inner_html ) ) ) {
 	return '';
 }
 
-ob_start();
 ?>
 <nav <?php echo wp_kses_post( $content_series_wrapper_attributes ); ?>>
 	<?php echo $content_series_inner_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 </nav>
 <?php
-return ob_get_clean();

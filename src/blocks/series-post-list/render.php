@@ -95,7 +95,6 @@ if ( $content_series_has_inner_blocks ) {
 	}
 }
 
-ob_start();
 ?>
 <div <?php echo wp_kses_post( $content_series_wrapper_attributes ); ?>>
 	<?php if ( '' !== trim( wp_strip_all_tags( $content_series_header_markup ) ) ) : ?>
@@ -135,4 +134,3 @@ ob_start();
 	<?php endif; ?>
 </div>
 <?php
-return ob_get_clean();

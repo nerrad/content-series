@@ -3,7 +3,7 @@
  * Plugin Name: Content Series
  * Plugin URI: https://github.com/your-username/content-series
  * Description: A modern, block-editor-native plugin for managing content series. Group posts together into series with full Gutenberg integration.
- * Version: 1.0.0
+ * Version: 0.9.2
  * Author: Your Name
  * Author URI: https://your-site.com
  * Text Domain: content-series
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin constants.
-define( 'CONTENT_SERIES_VERSION', '1.0.0' );
+define( 'CONTENT_SERIES_VERSION', '0.9.2' );
 define( 'CONTENT_SERIES_FILE', __FILE__ );
 define( 'CONTENT_SERIES_PATH', plugin_dir_path( __FILE__ ) );
 define( 'CONTENT_SERIES_URL', plugin_dir_url( __FILE__ ) );

@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "content-series/navigation-link",
-	"version": "1.0.0",
+	"version": "0.9.2",
 	"title": "Series Navigation Link",
 	"category": "theme",
 	"description": "Displays a previous or next series navigation link.",

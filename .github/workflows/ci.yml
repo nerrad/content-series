@@ -124,6 +124,9 @@ jobs:
                   PLAYWRIGHT_CLI=$(node -e "const path=require('path'); const wpScriptsDir=path.dirname(require.resolve('@wordpress/scripts/package.json')); process.stdout.write(require.resolve('@playwright/test/cli',{ paths:[wpScriptsDir] }));")
                   node "$PLAYWRIGHT_CLI" install --with-deps chromium
 
+            - name: Build plugin assets
+              run: pnpm build
+
             - name: Start wp-env
               run: pnpm env:start
 

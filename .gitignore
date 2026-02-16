@@ -20,3 +20,6 @@ artifacts/
 
 # Various AI things
 ignore/
+
+# Local docs/plans
+docs/

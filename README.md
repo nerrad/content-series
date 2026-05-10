@@ -19,7 +19,7 @@ A modern, block-editor-native WordPress plugin for managing content series. Grou
 - **Block Bindings**: A `content-series/term-meta` binding source for connecting blocks to series metadata (e.g. binding an image block to the series icon)
 - **Archive Enhancements**: Automatically appends series information ("Series: Name — Part N") to post excerpts on home, archive, and search pages
 - **REST API**: Custom endpoints for listing series posts in order and bulk-reordering
-- **PublishPress Series Migration**: Automatic data migration from the legacy PublishPress Series plugin on activation (shared taxonomy slug, icon import)
+- **PublishPress Series Migration**: Automatic data migration from the PublishPress Series plugin on activation (shared taxonomy slug, icon import)
 
 ## Requirements
 

@@ -81,25 +81,15 @@ class Migration {
 	private function migrate_icons() {
 		global $wpdb;
 
-		$table_name = $wpdb->prefix . self::LEGACY_ICONS_TABLE;
+		$table_name = $this->get_legacy_icons_table_name();
 
-		// Check if legacy table exists.
-		$table_exists = $wpdb->get_var(
-			$wpdb->prepare(
-				'SHOW TABLES LIKE %s',
-				$table_name
-			)
-		);
-
-		if ( ! $table_exists ) {
+		if ( ! $table_name ) {
 			return;
 		}
 
-		// Get all icons from legacy table.
-		// Table name is constructed from safe values (wpdb prefix + constant).
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time migration from a legacy custom table.
 		$icons = $wpdb->get_results(
-			"SELECT term_id, icon FROM {$wpdb->_escape( $table_name )}"
+			$wpdb->prepare( 'SELECT term_id, icon FROM %i', $table_name )
 		);
 
 		if ( ! $icons ) {
@@ -121,16 +111,75 @@ class Migration {
 				continue;
 			}
 
-			// Check if icon URL is a full URL or just a filename.
-			if ( strpos( $icon_url, 'http' ) !== 0 ) {
-				// It's likely a relative path or filename, try to construct full URL.
-				$upload_dir = wp_upload_dir();
-				$icon_url   = trailingslashit( $upload_dir['baseurl'] ) . 'series_icons/' . $icon_url;
-			}
+			$icon_url = $this->normalize_legacy_icon_url( $icon_url );
 
 			// Save to term meta.
 			update_term_meta( $term_id, Term_Meta::ICON_META_KEY, esc_url_raw( $icon_url ) );
 		}
+	}
+
+	/**
+	 * Get the legacy icons table name.
+	 *
+	 * Older Organize Series installs used a mixed-case orgSeriesIcons table name.
+	 * Resolve the actual table case from the database so those installs migrate too.
+	 *
+	 * @return string|false Legacy icons table name, or false if it does not exist.
+	 */
+	private function get_legacy_icons_table_name() {
+		global $wpdb;
+
+		$expected_table_name = $wpdb->prefix . self::LEGACY_ICONS_TABLE;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time migration table lookup.
+		$table_name = $wpdb->get_var(
+			$wpdb->prepare(
+				'SHOW TABLES LIKE %s',
+				$wpdb->esc_like( $expected_table_name )
+			)
+		);
+
+		if ( $table_name ) {
+			return $table_name;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time migration table lookup.
+		$tables = $wpdb->get_col(
+			$wpdb->prepare(
+				'SHOW TABLES LIKE %s',
+				$wpdb->esc_like( $wpdb->prefix ) . '%'
+			)
+		);
+		foreach ( $tables as $existing_table_name ) {
+			if ( 0 === strcasecmp( $existing_table_name, $expected_table_name ) ) {
+				return $existing_table_name;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Convert a legacy icon value to an absolute URL.
+	 *
+	 * PublishPress Series stores uploaded media as a path relative to the WordPress
+	 * root, then renders it by appending that value to home_url( '/' ).
+	 *
+	 * @param string $icon_url Legacy icon value.
+	 * @return string Absolute icon URL.
+	 */
+	private function normalize_legacy_icon_url( $icon_url ) {
+		$icon_url = trim( (string) $icon_url );
+
+		if ( preg_match( '#^https?://#i', $icon_url ) ) {
+			return $icon_url;
+		}
+
+		if ( false === strpos( $icon_url, '/' ) ) {
+			$upload_dir = wp_upload_dir();
+			return trailingslashit( $upload_dir['baseurl'] ) . 'series_icons/' . $icon_url;
+		}
+
+		return home_url( '/' . ltrim( $icon_url, '/' ) );
 	}
 
 	/**
@@ -141,6 +190,7 @@ class Migration {
 	private function get_migrated_icons_count() {
 		global $wpdb;
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Count term meta after a one-time migration.
 		return (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$wpdb->termmeta} WHERE meta_key = %s AND meta_value != ''",

@@ -143,7 +143,12 @@ class Migration {
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time migration table lookup.
-		$tables = $wpdb->get_col( 'SHOW TABLES' );
+		$tables = $wpdb->get_col(
+			$wpdb->prepare(
+				'SHOW TABLES LIKE %s',
+				$wpdb->esc_like( $wpdb->prefix ) . '%'
+			)
+		);
 		foreach ( $tables as $existing_table_name ) {
 			if ( 0 === strcasecmp( $existing_table_name, $expected_table_name ) ) {
 				return $existing_table_name;
@@ -167,6 +172,11 @@ class Migration {
 
 		if ( preg_match( '#^https?://#i', $icon_url ) ) {
 			return $icon_url;
+		}
+
+		if ( false === strpos( $icon_url, '/' ) ) {
+			$upload_dir = wp_upload_dir();
+			return trailingslashit( $upload_dir['baseurl'] ) . 'series_icons/' . $icon_url;
 		}
 
 		return home_url( '/' . ltrim( $icon_url, '/' ) );

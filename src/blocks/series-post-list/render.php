@@ -24,7 +24,10 @@ $content_series_post_type = get_post_type( $content_series_post_id ) ?: 'post';
 // Block attributes.
 $content_series_show_numbers      = $attributes['showNumbers'] ?? true;
 $content_series_show_short_title  = $attributes['showShortTitle'] ?? false;
-$content_series_highlight_current = $attributes['highlightCurrent'] ?? true;
+// Disable "highlight current" on term archives — no single post is "current"
+// when browsing a series index page; the context post_id reflects the last
+// queried post, not something the visitor is actively reading.
+$content_series_highlight_current = ( $attributes['highlightCurrent'] ?? true ) && ! is_tax();
 
 // Build wrapper attributes.
 $content_series_wrapper_attributes = get_block_wrapper_attributes(
